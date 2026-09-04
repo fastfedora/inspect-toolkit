@@ -1,0 +1,91 @@
+[project]
+name = "inspect-toolkit"
+description = "Reusable metrics, scorers, solvers, tools, dataset sources, and sandbox helpers for Inspect AI evaluations"
+readme = "README.md"
+authors = [
+    { name = "Trevor Lohrbeer", email = "trevor@fastfedora.com" },
+]
+license = { text = "MIT" }
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dynamic = ["version"]
+dependencies = [
+    "inspect-ai>=0.3.227",
+    "numpy~=2.4",
+    "pyyaml~=6.0",
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Typing :: Typed",
+    "Operating System :: OS Independent",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pyright>=1.1.409",
+    "ruff>=0.15.12",
+    "types-pyyaml>=6.0.12.20250915",
+]
+doc = [
+    "griffe>=1.15.0",
+    "markdown>=3.10",
+    "panflute>=2.3.1",
+    "quarto-cli>=1.8.26",
+]
+
+[project.urls]
+GitHub = "https://github.com/fastfedora/inspect-toolkit"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+# fallback_version lets the package build before any git tag exists (e.g., this pre-commit drop);
+# once the repo is tagged, hatch-vcs derives the version from the tag as usual.
+raw-options = { fallback_version = "0.0.0" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/inspect_toolkit"]
+
+[tool.quarto]
+project-dir = "docs"
+output-dir = "docs/_site"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+include = ["src/inspect_toolkit"]
+exclude = [
+    "**/__pycache__",
+    "**/.*",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+include = [
+    "src/inspect_toolkit/**/*.py",
+    "tests/**/*.py",
+]
+
+[tool.ruff.lint]
+# Explicit rule set (not `extend-select`) so it doesn't drift with ruff's evolving defaults.
+# ruff's pre-0.16 default (E4, E7, E9, F) plus flake8-bugbear (B) and pyupgrade (UP). Additional
+# rule sets (isort I, flake8-simplify SIM, flake8-pie PIE) are enabled one at a time in later
+# `style:` commits.
+select = ["E4", "E7", "E9", "F", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
