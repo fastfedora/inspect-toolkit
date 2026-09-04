@@ -1,0 +1,54 @@
+from inspect_ai.util import registry_info
+
+from inspect_toolkit.metrics.percentile import percentile
+from inspect_toolkit.utils.evals._metrics._add_dynamic_metric import add_dynamic_metric
+from inspect_toolkit.utils.evals._metrics._get_dynamic_metrics import get_dynamic_metrics
+
+
+class TestAddDynamicMetric:
+    def test_appends_to_metrics_and_category(self, stub_scorer):
+        metric = percentile(target=99)
+
+        add_dynamic_metric(stub_scorer, metric, "percentile")
+
+        info = registry_info(stub_scorer)
+        assert metric in info.metadata["metrics"]
+        assert get_dynamic_metrics(stub_scorer, "percentile") == [metric]
+
+    def test_category_defaults_to_metric_module_name(self, stub_scorer):
+        metric = percentile(target=99)
+
+        add_dynamic_metric(stub_scorer, metric)
+
+        # percentile's module is inspect_toolkit.metrics.percentile -> category "percentile"
+        assert get_dynamic_metrics(stub_scorer, "percentile") == [metric]
+
+    def test_multiple_metrics_accumulate_in_category(self, stub_scorer):
+        m1, m2 = percentile(target=1), percentile(target=99)
+
+        add_dynamic_metric(stub_scorer, m1, "percentile")
+        add_dynamic_metric(stub_scorer, m2, "percentile")
+
+        assert get_dynamic_metrics(stub_scorer, "percentile") == [m1, m2]
+
+    def test_duplicate_metric_name_is_not_added_again(self, stub_scorer):
+        # Same target -> same registered name -> a genuine duplicate that should be skipped.
+        add_dynamic_metric(stub_scorer, percentile(target=99), "percentile")
+        add_dynamic_metric(stub_scorer, percentile(target=99), "percentile")
+
+        info = registry_info(stub_scorer)
+        names = [registry_info(m).name for m in info.metadata["metrics"]]
+        assert names.count("inspect_toolkit/99th_percentile") == 1
+        assert len(get_dynamic_metrics(stub_scorer, "percentile")) == 1
+
+    def test_distinct_targets_are_both_added_despite_shared_category(self, stub_scorer):
+        # The guard keys on metric name, not category, so different targets both stick.
+        add_dynamic_metric(stub_scorer, percentile(target=95), "percentile")
+        add_dynamic_metric(stub_scorer, percentile(target=99), "percentile")
+
+        assert len(get_dynamic_metrics(stub_scorer, "percentile")) == 2
+
+
+class TestGetDynamicMetrics:
+    def test_unknown_category_returns_empty(self, stub_scorer):
+        assert get_dynamic_metrics(stub_scorer, "nonexistent") == []
