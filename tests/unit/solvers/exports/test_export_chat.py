@@ -1,8 +1,9 @@
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, mock_open
 from inspect import iscoroutinefunction
+from unittest.mock import AsyncMock, MagicMock, mock_open, patch
+
+import pytest
+from inspect_ai.model import ChatMessageAssistant, ChatMessageUser
 from inspect_ai.solver import TaskState
-from inspect_ai.model import ChatMessageUser, ChatMessageAssistant
 
 from inspect_toolkit.solvers.exports.export_chat import export_chat
 

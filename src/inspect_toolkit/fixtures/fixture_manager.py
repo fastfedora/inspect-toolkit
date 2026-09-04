@@ -1,14 +1,14 @@
 import shutil
 import tempfile
-import yaml
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+import yaml
 from inspect_ai.util import SandboxEnvironmentSpec
 
 from ..utils.collections import is_element_sequence, to_list
-from ..utils.parse import resolve_values, HashBraceTemplate
+from ..utils.parse import HashBraceTemplate, resolve_values
 
 
 class FixtureManager:

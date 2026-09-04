@@ -1,8 +1,9 @@
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from pathlib import Path
-from inspect_ai.solver import TaskState
 from inspect import iscoroutinefunction
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+from inspect_ai.solver import TaskState
 
 from inspect_toolkit.solvers.exports.export_sandbox_files import export_sandbox_files
 

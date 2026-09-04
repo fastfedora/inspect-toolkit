@@ -4,7 +4,6 @@ from typing import cast
 from ...types.repo_location import RepoLocation, RepoLocationSource
 from ...utils.typing.get_literal_args import get_literal_args
 
-
 REPO_LOCATION_SOURCES: tuple = get_literal_args(RepoLocationSource)
 
 

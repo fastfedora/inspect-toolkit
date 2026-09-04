@@ -1,10 +1,10 @@
 import logging
 from pathlib import Path
 
-from ...utils.sandbox.copy_dir_to_sandbox import copy_dir_to_sandbox
 from inspect_ai.solver import Generate, Solver, TaskState, solver
 from inspect_ai.util import sandbox
 
+from ...utils.sandbox.copy_dir_to_sandbox import copy_dir_to_sandbox
 from ..setup_repo import setup_repo as setup_repo_solver
 
 logger = logging.getLogger(__name__)

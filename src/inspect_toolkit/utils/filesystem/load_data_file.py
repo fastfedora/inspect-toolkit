@@ -1,8 +1,8 @@
+import json
 import logging
 from pathlib import Path
 from typing import Any
 
-import json
 import yaml
 
 logger = logging.getLogger(__name__)

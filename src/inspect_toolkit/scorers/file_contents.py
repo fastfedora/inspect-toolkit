@@ -9,8 +9,8 @@ from inspect_ai.scorer import (
     Score,
     Scorer,
     Target,
-    scorer,
     accuracy,
+    scorer,
     stderr,
 )
 from inspect_ai.solver import TaskState

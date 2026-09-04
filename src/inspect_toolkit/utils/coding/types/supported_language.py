@@ -2,7 +2,6 @@ from typing import Literal, TypeGuard
 
 from ...typing.get_literal_args import get_literal_args
 
-
 type SupportedLanguage = Literal["go", "java", "javascript", "python", "typescript"]
 
 

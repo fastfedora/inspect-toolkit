@@ -1,10 +1,10 @@
 import logging
 import shutil
+from inspect import iscoroutinefunction
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, mock_open
-from pathlib import Path
-from inspect import iscoroutinefunction
 from inspect_ai.solver import TaskState
 from inspect_ai.util import Store
 

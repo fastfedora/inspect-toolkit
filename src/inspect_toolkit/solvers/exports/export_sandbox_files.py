@@ -1,14 +1,14 @@
 import logging
 import traceback
-from pathlib import Path
 from collections.abc import Sequence
+from pathlib import Path
 
-from ...utils.sandbox.copy_dir_from_sandbox import copy_dir_from_sandbox
 from inspect_ai.solver import Generate, Solver, TaskState, solver
 
+from ...types.repo_location import RepoLocation
 from ...utils.collections.to_list import to_list
 from ...utils.filesystem import resolve_repo_location
-from ...types.repo_location import RepoLocation
+from ...utils.sandbox.copy_dir_from_sandbox import copy_dir_from_sandbox
 
 logger = logging.getLogger(__name__)
 

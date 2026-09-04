@@ -7,8 +7,8 @@ from inspect_ai.solver import Generate, Solver, TaskState, solver
 from ..types.child_solver_config import ChildSolverConfig
 from .exports import (
     export_chat,
-    export_sandbox_files,
     export_sample_files,
+    export_sandbox_files,
     export_store,
 )
 

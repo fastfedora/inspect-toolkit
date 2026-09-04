@@ -1,6 +1,7 @@
-import yaml
 from enum import Enum
 from typing import Any
+
+import yaml
 from yaml.nodes import Node
 
 

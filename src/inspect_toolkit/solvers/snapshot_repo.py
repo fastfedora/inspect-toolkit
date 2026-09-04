@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from inspect_ai.solver import Generate, Solver, TaskState, solver
 

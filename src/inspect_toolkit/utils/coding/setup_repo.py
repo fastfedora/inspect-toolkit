@@ -2,11 +2,11 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from .python import setup_python_repo
-from .javascript import setup_javascript_repo
-from .typescript import setup_typescript_repo
-from .java import setup_java_repo
 from .go import setup_go_repo
+from .java import setup_java_repo
+from .javascript import setup_javascript_repo
+from .python import setup_python_repo
+from .typescript import setup_typescript_repo
 
 logger = logging.getLogger(__name__)
 

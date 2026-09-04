@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from inspect_ai.solver import TaskState
 
 from inspect_toolkit.solvers.export_eval import export_eval

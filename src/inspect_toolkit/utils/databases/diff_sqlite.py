@@ -4,7 +4,6 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-
 Scalar = object | None
 RowDict = dict[str, Scalar]
 RowKey = tuple[Scalar, ...]

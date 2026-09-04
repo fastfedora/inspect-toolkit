@@ -1,6 +1,5 @@
-from typing import Any
 from collections.abc import Mapping
-
+from typing import Any
 
 type ChildSolverConfig = None | bool | Mapping[str, Any]
 """

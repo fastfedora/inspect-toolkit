@@ -3,8 +3,9 @@ import traceback
 from collections.abc import Sequence
 from pathlib import Path
 
-from ...utils.sandbox.get_diff_from_ref_dir import get_diff_from_ref_dir
 from inspect_ai.solver import Generate, Solver, TaskState, solver
+
+from ...utils.sandbox.get_diff_from_ref_dir import get_diff_from_ref_dir
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,6 @@ from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import Any
 
-
 DatabaseDiff = Mapping[str, Any]
 DiffResult = dict[str, Any]
 

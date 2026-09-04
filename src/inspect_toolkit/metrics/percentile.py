@@ -7,7 +7,6 @@ from inspect_ai.scorer import Metric, SampleScore, Value, metric
 
 from .undefined_result import undefined_result
 
-
 type PercentileMethod = Literal[
     "linear",
     "nearest",

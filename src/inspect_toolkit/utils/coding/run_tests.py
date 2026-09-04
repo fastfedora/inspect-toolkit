@@ -3,11 +3,11 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .python import run_python_tests
-from .javascript import run_javascript_tests
-from .typescript import run_typescript_tests
-from .java import run_java_tests
 from .go import run_go_tests
+from .java import run_java_tests
+from .javascript import run_javascript_tests
+from .python import run_python_tests
+from .typescript import run_typescript_tests
 
 logger = logging.getLogger(__name__)
 
