@@ -46,22 +46,24 @@ def diff_databases(
 
     async def db_diff_solver(state: TaskState, generate: Generate) -> TaskState:
         try:
-            async with local_repo_dir(state, before_source) as before_path:
-                async with local_repo_dir(state, after_source) as after_path:
-                    logger.info(
-                        f"Comparing databases between '{before_source}' at '{before_path}' "
-                        f"and '{after_source}' at '{after_path}'"
-                    )
+            async with (
+                local_repo_dir(state, before_source) as before_path,
+                local_repo_dir(state, after_source) as after_path,
+            ):
+                logger.info(
+                    f"Comparing databases between '{before_source}' at '{before_path}' "
+                    f"and '{after_source}' at '{after_path}'"
+                )
 
-                    db_diff_results = diff_filesystem_databases(
-                        before_source=str(before_path),
-                        after_source=str(after_path),
-                        db_patterns=db_patterns,
-                        include_schema=include_schema,
-                        include_data=include_data,
-                        max_rows=max_rows,
-                    )
-                    state.store.set("db_diff", db_diff_results)
+                db_diff_results = diff_filesystem_databases(
+                    before_source=str(before_path),
+                    after_source=str(after_path),
+                    db_patterns=db_patterns,
+                    include_schema=include_schema,
+                    include_data=include_data,
+                    max_rows=max_rows,
+                )
+                state.store.set("db_diff", db_diff_results)
 
         except Exception as e:
             logger.error(f"Failed to perform database diff: {e}")

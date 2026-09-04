@@ -68,9 +68,8 @@ class TrackingStore(Store):
         # Remove from changes if it was previously set
         if key in self._changes:
             del self._changes[key]
-        if not self._is_shadow:
-            if key in self._original_store:
-                self._original_store.delete(key)
+        if not self._is_shadow and key in self._original_store:
+            self._original_store.delete(key)
 
     def get_changes(self) -> dict[str, Any]:
         """Get all changes made during execution."""

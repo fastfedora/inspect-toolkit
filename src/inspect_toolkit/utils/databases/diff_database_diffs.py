@@ -383,8 +383,8 @@ def _diff_column_lists(
     before_by_name = {col.get("name"): col for col in before_cols}
     after_by_name = {col.get("name"): col for col in after_cols}
 
-    before_names = {name for name in before_by_name.keys() if name is not None}
-    after_names = {name for name in after_by_name.keys() if name is not None}
+    before_names = {name for name in before_by_name if name is not None}
+    after_names = {name for name in after_by_name if name is not None}
 
     before_only: list[dict[str, Any]] = []
     after_only: list[dict[str, Any]] = []
@@ -420,8 +420,8 @@ def _diff_column_changes(
     before_by_name = {change.get("name"): change for change in before_changes}
     after_by_name = {change.get("name"): change for change in after_changes}
 
-    before_names = {name for name in before_by_name.keys() if name is not None}
-    after_names = {name for name in after_by_name.keys() if name is not None}
+    before_names = {name for name in before_by_name if name is not None}
+    after_names = {name for name in after_by_name if name is not None}
 
     before_only: list[dict[str, Any]] = []
     after_only: list[dict[str, Any]] = []

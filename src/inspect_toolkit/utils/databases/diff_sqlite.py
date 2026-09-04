@@ -181,10 +181,7 @@ def diff_sqlite_databases(
                 # Fallback: try rowid
                 use_rowid = False
                 if not key_cols:
-                    if _table_has_rowid(conn_after, t):
-                        key_cols = ["rowid"]
-                        use_rowid = True
-                    elif _table_has_rowid(conn_before, t):
+                    if _table_has_rowid(conn_after, t) or _table_has_rowid(conn_before, t):
                         key_cols = ["rowid"]
                         use_rowid = True
                     else:

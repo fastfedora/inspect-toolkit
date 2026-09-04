@@ -202,11 +202,7 @@ def matches_diff(diff: JSON, selector: JSON) -> bool:
 
     # If selector begins at tables/rows, it implicitly applies to "all databases".
     # We evaluate DB by DB; match if any database yields True.
-    for db_name, db_entry in comps.items():
-        if _eval_selector_on_db(db_name, db_entry, norm):
-            return True
-
-    return False
+    return any(_eval_selector_on_db(db_name, db_entry, norm) for db_name, db_entry in comps.items())
 
 
 # Optional helper: return which (db, table) satisfied the selector
@@ -315,10 +311,7 @@ def _eval_tables_rows(db_entry: JSON, sel: JSON, targets: Sequence[str]) -> bool
     if not table_names:
         return False
 
-    for t in table_names:
-        if _table_matches(db_entry, t, sel, targets):
-            return True
-    return False
+    return any(_table_matches(db_entry, t, sel, targets) for t in table_names)
 
 
 def _eval_tables_rows_collect(db_entry: JSON, sel: JSON, targets: Sequence[str]) -> list[str]:
@@ -493,10 +486,7 @@ def _match_row_set(rows: Sequence[Mapping[str, Any]], sel: JSON, kind: str) -> b
 
     # `where` without `$count` requires at least one row to satisfy the clauses (otherwise the
     # predicate would pass vacuously).
-    if "where" in sel and "$count" not in sel and len(filtered) == 0:
-        return False
-
-    return True
+    return not ("where" in sel and "$count" not in sel and len(filtered) == 0)
 
 
 def _row_matches_template(row: Mapping[str, Any], template: Any) -> bool:
@@ -527,9 +517,7 @@ def _match_row_changes(changes: Sequence[Mapping[str, Any]], sel: JSON) -> bool:
             cols = list((rc.get("changes") or {}).keys())
             if has_one_cols is not None and not any(c in cols for c in has_one_cols):
                 return False
-            if has_all_cols is not None and not all(c in cols for c in has_all_cols):
-                return False
-            return True
+            return not (has_all_cols is not None and not all(c in cols for c in has_all_cols))
 
         filtered = [rc for rc in filtered if passes(rc)]
 
@@ -560,7 +548,7 @@ def _match_row_changes(changes: Sequence[Mapping[str, Any]], sel: JSON) -> bool:
 
     # If any constraint was specified, passing means constraints satisfied
     has_constraints = any(k in sel for k in ("has_one", "has_all", "where", "$count"))
-    return len(filtered) > 0 and (has_constraints or not has_constraints)
+    return len(filtered) > 0 and (has_constraints or not has_constraints)  # noqa: SIM221 (documented: a row-change match always requires >=1 surviving row)
 
 
 # ---------- Predicates & where ----------
@@ -628,9 +616,9 @@ def _eval_value_predicate(val: Any, pred: Any) -> bool:
     if coerce:
         val = _coerce(val, coerce)
 
-    if "$eq" in pred and not (val == pred["$eq"]):
+    if "$eq" in pred and val != pred["$eq"]:
         return False
-    if "$not-eq" in pred and not (val != pred["$not-eq"]):
+    if "$not-eq" in pred and val == pred["$not-eq"]:
         return False
     if "$in" in pred and not _in_list(val, pred["$in"]):
         return False
@@ -677,9 +665,9 @@ def _in_list(val: Any, arr: Sequence[Any]) -> bool:
 
 
 def _compare_count(n: int, pred: Mapping[str, int]) -> bool:
-    if "$eq" in pred and not (n == pred["$eq"]):
+    if "$eq" in pred and n != pred["$eq"]:
         return False
-    if "$not-eq" in pred and not (n != pred["$not-eq"]):
+    if "$not-eq" in pred and n == pred["$not-eq"]:
         return False
     if "$gt" in pred and not (n > pred["$gt"]):
         return False
@@ -687,9 +675,7 @@ def _compare_count(n: int, pred: Mapping[str, int]) -> bool:
         return False
     if "$lt" in pred and not (n < pred["$lt"]):
         return False
-    if "$lte" in pred and not (n <= pred["$lte"]):
-        return False
-    return True
+    return not ("$lte" in pred and not n <= pred["$lte"])
 
 
 def _coerce_membership_spec(spec: Any) -> Mapping[str, Any]:
@@ -934,7 +920,7 @@ def _validate_row_template_list(value: Any, path: str) -> None:
         )
     for index, item in enumerate(value):
         item_path = f"{path}[{index}]"
-        if isinstance(item, str) or isinstance(item, Mapping):
+        if isinstance(item, (str, Mapping)):
             continue
         if isinstance(item, (list, tuple)):
             if not item:
