@@ -79,10 +79,9 @@ include = [
 
 [tool.ruff.lint]
 # Explicit rule set (not `extend-select`) so it doesn't drift with ruff's evolving defaults.
-# ruff's pre-0.16 default (E4, E7, E9, F) plus flake8-bugbear (B), pyupgrade (UP), isort (I) and
-# flake8-simplify (SIM). The remaining rule set (flake8-pie PIE) is enabled in a later `style:`
-# commit.
-select = ["E4", "E7", "E9", "F", "B", "UP", "I", "SIM"]
+# ruff's pre-0.16 default (E4, E7, E9, F) plus flake8-bugbear (B), pyupgrade (UP), isort (I),
+# flake8-simplify (SIM) and flake8-pie (PIE).
+select = ["E4", "E7", "E9", "F", "B", "UP", "I", "SIM", "PIE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
