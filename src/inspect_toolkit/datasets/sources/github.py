@@ -13,7 +13,14 @@ logger = logging.getLogger(__name__)
 class GitHubDatasetSource(DatasetSource):
     """Dataset source for GitHub repositories."""
 
-    def __init__(self, owner: str, repo: str, path: str, ref: str | None = None):
+    def __init__(
+        self,
+        owner: str,
+        repo: str,
+        path: str,
+        ref: str | None = None,
+        cache_root: Path | None = None,
+    ):
         """
         Initialize a GitHub dataset source.
 
@@ -22,11 +29,15 @@ class GitHubDatasetSource(DatasetSource):
             repo: Repository name
             path: Path within the repository to the datasets directory
             ref: Optional branch, tag, or commit reference (defaults to "main")
+            cache_root: Root directory under which datasets are cached. Defaults to a `datasets`
+                directory at the project root (discovered by walking up to the nearest
+                `pyproject.toml`).
         """
         self.owner = owner
         self.repo = repo
         self.path = path.rstrip("/")
         self.ref = ref or "main"
+        self.cache_root = cache_root
         self.repo_url = f"https://github.com/{owner}/{repo}.git"
 
     def is_cached(self, dataset_name: str) -> bool:
@@ -73,7 +84,7 @@ class GitHubDatasetSource(DatasetSource):
     def _get_cache_path(self) -> Path:
         """Get the cache path for this repository."""
         identifier = f"{self.owner}/{self.repo}"
-        return get_cache_path("github", identifier, self.ref)
+        return get_cache_path("github", identifier, self.ref, cache_root=self.cache_root)
 
     def _get_dataset_path(self, dataset_name: str) -> Path:
         """Get the full path to the dataset within the cache."""

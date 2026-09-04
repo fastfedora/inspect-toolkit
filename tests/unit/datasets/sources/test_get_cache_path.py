@@ -185,3 +185,11 @@ class TestGetCachePath:
             result = get_cache_path("github", "owner/repo", "v1.0.0")
 
             assert result.name == "v1.0.0"
+
+    def test_get_cache_path_uses_explicit_cache_root(self):
+        """An explicit cache_root overrides the pyproject-based discovery."""
+        cache_root = Path("/tmp/custom-cache")
+
+        result = get_cache_path("github", "owner/repo", "main", cache_root=cache_root)
+
+        assert result == cache_root / "github" / "owner-repo" / "main"

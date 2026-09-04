@@ -2,7 +2,12 @@ import re
 from pathlib import Path
 
 
-def get_cache_path(source_type: str, identifier: str, ref: str | None = None) -> Path:
+def get_cache_path(
+    source_type: str,
+    identifier: str,
+    ref: str | None = None,
+    cache_root: Path | None = None,
+) -> Path:
     """
     Get the cache path for a dataset source.
 
@@ -10,13 +15,17 @@ def get_cache_path(source_type: str, identifier: str, ref: str | None = None) ->
         source_type: Type of source (e.g., "github", "huggingface")
         identifier: Unique identifier for the source (e.g., "owner/repo/path")
         ref: Optional reference (branch, tag, or commit) for versioning
+        cache_root: Root directory under which datasets are cached. Defaults to a `datasets`
+            directory at the project root, discovered by walking up from the current directory to
+            the nearest `pyproject.toml`.
 
     Returns:
         Path to the cached dataset directory
     """
     safe_ref = _sanitize_for_path(ref) if ref else "main"
+    root = cache_root if cache_root is not None else _get_cache_root()
 
-    return _get_cache_root() / source_type / _sanitize_for_path(identifier) / safe_ref
+    return root / source_type / _sanitize_for_path(identifier) / safe_ref
 
 
 def _get_cache_root() -> Path:
