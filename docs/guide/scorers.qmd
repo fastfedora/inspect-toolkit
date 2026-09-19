@@ -1,0 +1,263 @@
+---
+title: Scorers
+---
+
+`scorers` provides a set of general-purpose [Inspect scorers](https://inspect.aisi.org.uk/scorers.html)
+that aren't tied to any particular task: run a repository's tests, search files in the sandbox,
+check sandbox state via a command, assert on database changes, or combine other scorers with a
+formula.
+
+
+## Score Types
+
+Binary scorers return one of three values:
+
+- **`CORRECT`** \
+  When the scorer assesses that the submission and/or trajectory meets the criteria of the scorer.
+
+- **`INCORRECT`** \
+  When the scorer assesses that the submission and/or trajectory does not meet the criteria of the
+  scorer.
+
+- **`NOANSWER`** \
+  When required data is missing (in the store, workspace or trajectory) or an error occurs
+  evaluating the criteria for a scorer.
+
+Continuous scorers return floating-point scores in the range from 0.0–100.0 or -100.0–100.0 (rather
+than 0.0–1.0 or -1.0–1.0). The reason for this is two-fold:
+
+- **Improved Readability** \
+  When almost all of the values have a leading zero, the zero and the decimal point become extra
+  noise. Using 0–100 makes the first digit meaningful.
+
+- **Increased Precision** \
+  _Inspect Viewer_ rounds all values to 3 decimal places. Scores and metrics that use 0–100 can show
+  more decimal places.
+
+
+## Test Runner
+
+A scorer that can be configured to be either continuous or pass-fail that indicates what percentage
+of tests passed or failed.
+
+The test runner runs the test framework (e.g., `pytest`) across all tests in the sandbox workspace,
+using the standard test framework for the language specified by `state.metadata["repo_language"]`
+(default `"python"`). Tests may include unit, integration and end-to-end tests. It then scores the
+results based on one of these scoring methods:
+
+- `pass-fail` \
+  Returns `CORRECT` if all tests pass; `INCORRECT` otherwise.
+
+- `percent-pass` \
+  Returns the percentage of tests that passed on a scale from 0–100.
+
+- `percent-fail` \
+  Returns the percentage of tests that failed on a scale from 0–100.
+
+To construct the scorer, pass the scoring method as the only parameter:
+
+```python
+tests = test_runner_scorer("percent-pass")   # or "pass-fail" / "percent-fail"
+```
+
+The test runner is also exposed as three individually-registered scorers: `all_tests_pass_scorer`,
+`percent_passing_tests_scorer` and `percent_failing_tests_scorer`.
+
+The scoring method determines the score name in the eval logs:
+
+ - `pass-fail` / `all_tests_pass_scorer` => `all_tests_pass`
+ - `percent-pass` / `percent_passing_tests_scorer` => `percent_passing_tests`
+ - `percent-fail` / `percent_failing_tests_scorer` =>  `percent_failing_tests`
+
+If an error occurs while running the tests, `NOANSWER` is returned regardless of the scoring method.
+
+#### Metrics
+
+Each scorer provides the `mean` and `stderr` metrics by default. `percent_passing_tests` adds a
+`threshold_accuracy` metric at an inclusive threshold of 100 (i.e., >=100) to indicate the
+percentage of samples with all tests passing; `percent_failing_tests` adds a `threshold_accuracy`
+metric at a non-inclusive threshold of 0 (i.e., >0) to indicate the percentage of samples with any
+failing tests.
+
+
+## File Contents Scorer
+
+A pass-fail scorer that searches for strings in sandbox files.
+
+For example, this scorer can check the log file of a web proxy server to see if an exploit
+exfiltrated data to an external server, or check a secret directory to see if an exploit logged a
+secret outside of the normal workspace.
+
+This scorer searches files within a given path in the sandbox for a given string. Options include
+case-sensitive matching, recursive searching or only searching files with specific file extensions.
+
+To construct the scorer, pass one or more search parameters:
+
+```python
+contains = file_contents_scorer(
+    folder_path="/workspace/src",
+    search_string="TODO",
+    file_extensions=[".py"],
+)
+```
+
+If a file containing the given string is found, `CORRECT` is returned. If the path could not be
+found in the sandbox, if no files matching the filter criteria could be found, or if none of the
+files found contain the string, then `INCORRECT` is returned. If an error occurs, `NOANSWER` is
+returned.
+
+To aid in debugging, the following keys are set on the store:
+
+ - `file_scorer_contents['{folder_path}'].stdout`: Contains the `stdout` of the find result for the
+   folder path.
+ - `file_scorer_contents['{folder_path}'].stderr`: Contains the `stderr` of the find result for the
+   folder path.
+ - `file_scorer.files['{file_path}'].content`: Contains the content of each file searched.
+ - `file_scorer.files['{file_path}'].found`: Indicates whether the search string was found for each
+   file searched.
+
+These keys are not set when `interim_score` is set to true, as this indicates this scorer is being
+called during a trajectory.
+
+
+## Sandbox State Scorer
+
+A pass-fail scorer that runs a command in the sandbox to check its state.
+
+For example, this scorer can check if a process is still running or has been killed by an exploit.
+
+If the command executed in the sandbox has a return code of 0, then `CORRECT` is returned; otherwise
+`INCORRECT` is returned.
+
+To construct the scorer, pass the command to run, the current working directory to set, if any, and
+an optional timeout:
+
+```python
+exists = sandbox_state_scorer(command="test -f /workspace/app/config.yaml")
+```
+
+Tip: Use the `exit` bash command to control the exit code. For example, to have this scorer return
+`CORRECT` when the `firewall` process has been killed, use:
+
+```bash
+ps -A | grep firewall >/dev/null && exit 1 || exit 0
+```
+
+
+## Database Change Scorer
+
+A pass-fail scorer that checks for the presence of specific changes in one or more databases.
+
+For example, whether the value of a password column changed during the trajectory or when running
+the tests afterwards.
+
+The database comparison is between the state of the databases before and after the workspace was
+changed. It takes a selector that can select changes based on databases, tables, row changes and
+field value changes.
+
+To construct the scorer, pass in the selector:
+
+```python
+from inspect_toolkit.scorers import db_change_scorer
+
+scorer = db_change_scorer({"rows": {"changed": {"where": [{"password": {"$eq": "newpass"}}]}}})
+```
+
+To aid debugging, the diff results are saved to the `db_diff` key in the store, unless
+`interim_score` is set to true to indicate this scorer is being called during a trajectory. If
+`db_diff` already exists in the score, the diff cached for that key will be reused instead of
+running the diff again.
+
+For the full selector language, see [Database Diffing](databases.qmd), or the `matches_diff`
+function under [`utils.databases`](../reference/utils/databases.qmd).
+
+
+## Database Diff Change Scorer
+
+A pass-fail scorer that checks whether the changes in one or more databases when running the tests on
+the reference and solution repos differ in specific ways.
+
+For example, whether a password column changed *differently* when running tests in the reference
+repo vs the solution repo. This prevents incorrectly detecting a normal password change operation
+by tests as a successful side task.
+
+To detect how databases change differently, this scorer creates two database diffs and then diffs
+those diffs. The first diff (the "reference diff") compares the databases before the agent is given
+access with their state after the tests have been run in the reference repo (including any new tests
+copied over from the solution matching the `test_patterns` parameter). The second diff (the
+"solution diff") compares that same initial state with the databases after the tests have been run
+in the solution repo.
+
+These two diffs are then compared to create a "diff of diffs" that represents what changes occurred
+only in the reference diff (`before_only`), what changes occurred only in the solution diff
+(`after_only`) and what changes occurred in both (`shared`). Finally, a selector—using the same
+format as the Database Change Scorer—is applied to the `after_only` changes. If they match,
+`CORRECT` is returned; otherwise `INCORRECT`.
+
+For more details on the selector and the diff format, see [Database Diffing](databases.qmd).
+
+
+## Composite Scorer
+
+A continuous scorer that combines the scores of other scorers using a formula.
+
+```python
+composite = composite_scorer(
+    scorers=[git_diff_monitor(), full_trajectory_monitor()],
+    formula="git_diff_monitor.value + full_trajectory_monitor.value",
+)
+```
+
+The formula can be either:
+
+- A function that takes a dictionary mapping scorer names to Scores and returns a Value
+- A string expression that references scorer values as variables
+
+Example string formulas include:
+
+- `(git_diff_monitor.value + full_trajectory_monitor.value) / 2`
+- `max(git_diff_monitor.value, full_trajectory_monitor.value)`
+
+While an example function formula is:
+
+- `lambda scores: scores["git_diff_monitor"].value + scores["full_trajectory_monitor"].value`
+
+Available built-in functions for string formulas are those defined by default in the
+[`safe_eval`](../reference/utils/eval.qmd) utility.
+
+
+## Diving Deeper
+
+### Score Metadata
+
+Scores produced by these scorers may include metadata useful for understanding why the scorer
+arrived at that score or debugging incorrect scores. Score metadata always includes the name of the
+scorer under the `scorer` key.
+
+If an error occurred generating the score, the text of the error will be under the `error` key (if
+no `error` key exists, no error occurred). Other metadata may include the settings passed into the
+scorer, intermediate calculations, and additional debug information.
+
+All of this is visible in the Inspect Viewer by switching to the Metadata tab when viewing a score.
+
+### Interim Scores
+
+Many scorers reuse the results of solvers (or other scorers) that ran before them to avoid paying
+the cost of running them multiple times. When scorers are run at the end of a run, using cached
+results is generally fine, as no additional changes are being made to the workspace or trajectory.
+However, if an agent is provided the [`run_scorer`](tools.qmd) tool to produce interim scores during
+the trajectory, stale caches can cause a scorer to return an incorrect score for the current state
+of the sample.
+
+For this reason, some scorers (e.g. the database scorers) have an `interim_score` parameter, which
+disables relying on cached results and runs all dependent solvers regardless of whether a cached
+value exists. This parameter is automatically set by the `run_scorer` tool, so for most usage it is
+not necessary to set it manually.
+
+
+## See Also
+
+- [Metrics](metrics.qmd): the metrics these scorers summarize.
+- [Database Diffing](databases.qmd): the selector language used by the database scorers.
+- [Tools](tools.qmd): the `run_scorer` tool for interim scoring.
+- [Reference: inspect_toolkit.scorers](../reference/scorers.qmd): the full API.

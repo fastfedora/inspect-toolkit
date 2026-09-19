@@ -1,0 +1,80 @@
+---
+title: Dataset Sources
+---
+
+`datasets.sources` provides pluggable dataset sources: a small abstraction over *where* a dataset
+comes from, so evaluation code can accept a GitHub URL, a `github:` spec, or a local path
+interchangeably and get back a resolved local directory.
+
+To use it:
+
+```python
+from inspect_toolkit.datasets.sources import resolve_source
+
+source = resolve_source("<github-url-or-local-path>")   # -> DatasetSource
+dataset_path = source.resolve("my_dataset")             # downloads/caches as needed
+```
+
+`resolve_source` inspects the string and returns the appropriate `DatasetSource`
+(`GitHubDatasetSource` or `LocalDatasetSource`). Every source exposes `resolve(dataset_name)`, which
+returns a local path to the dataset, downloading and caching it first if necessary.
+
+
+## Local Sources
+
+Local dataset sources can be absolute paths or paths relative to the current project directory.
+
+A common pattern when developing datasets is to check out the dataset repository into a sibling
+folder and point the source at it:
+
+```python
+source = resolve_source("../full-repo-datasets/datasets")
+```
+
+Alternatively, create a symlink from a folder in the project root to the location of the datasets on
+your machine and point the source at the local folder:
+
+```bash
+ln -s ../full-repo-datasets/datasets ./custom-datasets
+```
+
+
+## GitHub Sources
+
+GitHub sources can be specified either as `https` or `github` URLs.
+
+For sources using the `github` protocol, the format is one of:
+
+```
+    github:owner/repo
+    github:owner/repo/path@ref
+```
+
+For sources using the `https` protocol, the format is one of:
+
+```
+    https://github.com/owner/repo
+    https://github.com/owner/repo/tree/ref/path
+```
+
+Where `path` specifies the path within the repo to the datasets and `ref` is an optional branch
+name, tag or commit reference. If no `path` is specified, it defaults to `datasets` and if no `ref`
+is specified, it defaults to `main`. GitHub sources use a sparse checkout, so only the requested
+path is fetched.
+
+
+## Caching
+
+GitHub datasets are downloaded into a local cache. `get_cache_path(source_type, identifier, ref,
+cache_root=None)` computes the cache location; the cache root defaults to a `datasets/` directory at
+the project root, discovered by walking up to the nearest `pyproject.toml`.
+
+The cache root is overridable—pass `cache_root` to `get_cache_path`, or `cache_root=` when
+constructing a `GitHubDatasetSource`—so you can point the cache somewhere other than the project
+tree. To reload a cached dataset, delete its folder from the cache (or delete the whole cache
+folder).
+
+
+## See Also
+
+- [Reference: inspect_toolkit.datasets](../reference/datasets.qmd): the full API.

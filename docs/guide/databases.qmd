@@ -1,0 +1,469 @@
+---
+title: Database Diffing
+---
+
+`utils.databases` provides pure-stdlib SQLite diffing plus a MongoDB-like selector language for
+asserting on those diffs. Together they let you detect exactly how a database changed during a
+trajectory—what tables and columns were added or removed, which rows changed, and what values they
+changed to—and then write a compact selector that matches only the changes you care about.
+
+The selector can select changes based on:
+
+- **Databases** \
+ `{"databases": {"name": "users.db"}}`
+
+- **Tables** \
+  `{"tables": {"name": "users", "status": "changed"}}`
+
+- **Row Changes** \
+  `{"rows": {"changed": {"has_one": ["password"]}}}`
+
+- **Field Value Changes** \
+  `{"rows": {"changed": {"where": [{"password": {"$eq": "newpass"}}]}}}`
+
+- **Logical Operators** \
+  `{"$and": [...], "$or": [...], "$not": {...}}`
+
+- **Target Specification** \
+  `{"target": "schema"}`
+
+For instance, to check if a row with a `name` of `"alice"` was added to any table, use:
+
+```python
+from inspect_toolkit.utils.databases import diff_sqlite_databases, matches_diff
+
+diff = diff_sqlite_databases(before_path, after_path)
+assert matches_diff(diff, {"rows": {"added": {"has_one": [{"name": "alice"}]}}})
+```
+
+The four public functions are:
+
+- `diff_sqlite_databases(before_path, after_path, ...)` \
+   Diff two SQLite database files.
+
+- `diff_filesystem_databases(before_source, after_source, db_patterns=..., ...)` \
+  Find and diff all database files (by glob pattern) across two directories.
+
+- `diff_database_diffs(before_diff, after_diff)` \
+  A "diff of diffs", splitting changes into `before_only`, `after_only` and `shared`. This is what
+  powers the [Database Diff Change scorer](scorers.qmd#database-diff-change-scorer).
+
+- `matches_diff(diff, selector)` \
+  Test whether a diff matches a selector.
+
+The [`db_change` and `db_diff_change` scorers](scorers.qmd#database-change-scorer) wrap these so you
+can assert on database changes directly from an eval.
+
+
+## The Selector
+
+The selector is a nested JSON object that matches database changes by database, table, and row
+properties. It can be used to detect field changes, table changes, and specific value changes.
+
+### Target Scope
+
+The `target` key specifies which diff planes to consider: `data` for only changes to the data in the
+databases, `schema` for only changes to the structure of the databases, or `both` for both planes.
+It defaults to `both`.
+
+### Databases Scope
+
+The `databases` scope can be used to select which database files exist before and after the
+trajectory. It takes these options:
+
+`name`
+: A database name or an object with a `has_one` key whose value is a list of database names; the
+  database matches when its name equals any entry in the list.
+
+`path`
+: A database path or an object with a `has_one` key whose value is a list of database paths; the
+  database matches when its path equals any entry in the list.
+
+`exists_before`
+: A boolean indicating whether the database existed before execution.
+
+`exists_after`
+: A boolean indicating whether the database existed after execution.
+
+For instance, the following matches if the `db.sqlite` database within `workspace` was deleted
+during the trajectory:
+
+```json
+{
+  "databases": {
+    "path": "/workspace/db.sqlite",
+    "exists_before": true,
+    "exists_after": false
+  }
+}
+```
+
+
+### Tables Scope
+
+The `tables` scope can be used to match changes to tables and their columns within the selected
+databases. The criteria split into two kinds:
+
+Table-Level Criteria
+: The keys `name`, `status` and `columns` describe changes within a single table. The scope passes
+  when at least one table in the database matches every table-level criterion you've supplied.
+
+Database-Level Criteria
+: The keys `added`, `removed`, `changed` describe changes to tables within the database as a whole.
+  Each one looks at the set of tables in the database with that status and checks whether the
+  names you listed appear in it.
+
+Table-level criteria include:
+
+`name`
+: A table name or an object with a `has_one` key whose value is a list of table names; the
+  table matches when its name equals any entry in the list.
+
+`status`
+: A status or an object with a `has_one` key whose value is a list of statuses; the status matches
+  when it equals any entry in the list. Status must be one of `added`, `removed`, `changed`, or
+  `unchanged` indicating how the schema and/or data for the table was modified. Changes to the
+  schema take precedence over changes to the data.
+
+`columns`
+: An object with optional `added`, `changed` and `removed` keys representing which columns were
+  added, changed or removed from the table schema.
+
+Both the database-level criteria and the `columns` key accept `added`, `changed` and `removed` keys
+whose values can be set to one of the following:
+
+- A string identifying the name of the column or table to match.
+- An object with a `has_one` key containing either a single column or table name, or a list of
+  column or table names; the table or column matches when its name equals any given entry.
+- An object with a `has_all` key containing a list of column or table names; the criteria matches
+  when all of the named columns or tables have the same change status (e.g., `added`, `changed` or
+  `removed`).
+
+For instance, the following matches if the `users` table exists and an `email` column was added to
+it:
+
+```json
+{
+  "tables": {
+    "name": { "has_one": ["users"] },
+    "columns": {
+      "added": { "has_one": "email" }
+    }
+  }
+}
+```
+
+This can be written in shorthand as:
+
+```json
+{
+  "tables": {
+    "name": "users",
+    "columns": {
+      "added": "email"
+    }
+  }
+}
+```
+
+Likewise, this matches if both the `users` and `permissions` tables were dropped during the
+trajectory:
+
+```json
+{
+  "tables": {
+    "removed": { "has_all": ["users", "permissions"] }
+  }
+}
+```
+
+### Rows Scope
+
+The `rows` scope can be used to match changes to data within one or more tables.
+
+Row change criteria are defined via `added`, `changed`, and `removed` keys.
+
+For `added` and `removed`, the criteria can be set to any of the following:
+
+- A string name of a column; any row with a non-null value in the column matches.
+- A list of column names; any row with non-null values in every listed column matches.
+- An object with a `has_one` key containing a list of row templates; the criteria matches if any
+  template matches a row.
+- An object with a `has_all` key containing a list of row templates; the criteria matches if all
+  of the templates match at least one row.
+- An object containing a `where` key containing a list of conditions; the criteria matches if the
+  where conditions match.
+- An object containing a `$count` key containing a numerical comparison condition; the criteria
+  matches if the number of rows matching the `where` condition (or number of rows with the
+  status overall, if no `where` is specified) matches the comparison condition.
+
+Each row template for `has_one` or `has_all` can be one of the following:
+
+- A string name of a column; the criteria matches any row with a non-null value in the column.
+- A list of column names; the criteria matches any row with non-null values in every listed column.
+- An object mapping column names to values; the criteria matches if any row has all of the
+  columns equal to the values (i.e., the template row is equal to or a subset of the matching row).
+
+For instance, the following matches any table where at least two rows were removed, with one row
+having a `username` column whose value was "admin" and another having both a `username` column whose
+value was "root" and an `email` column whose value was "root@example.com":
+
+```json
+{
+  "rows": {
+    "removed": {
+      "has_all": [
+        { "username": "admin" },
+        { "username": "root", "email": "root@example.com" }
+      ]
+    }
+  }
+}
+```
+
+This checks if any rows were added to any table with a non-null role:
+
+```json
+{
+  "rows": {
+    "added": "role"
+  }
+}
+```
+
+And the following matches any table where two or more rows were added that contained a `role` column
+whose value was either "admin" or "root":
+
+```json
+{
+  "rows": {
+    "added": {
+      "where": [{
+        "role": {
+          "$in": ["admin", "root"]
+        }
+      }],
+      "$count": {
+        "$gte": 2
+      }
+    }
+  }
+}
+```
+
+For the `changed` criteria, the criteria can be set to any of the following:
+
+- The string name of a column whose value changed.
+- A list of column names whose values changed.
+- An object with a `has_one` key containing a column name or a list of columns; the criteria matches
+  if the values in any one of the columns changed.
+- An object with a `has_all` key containing a list of columns; the criteria matches if the values in
+  all of the columns changed.
+- An object containing a `where` key containing a list of conditions; the criteria matches if the
+  where conditions match.
+- An object containing a `$count` key containing a numerical comparison condition; the criteria
+  matches if the number of rows matching the `where` condition (or number of rows with the
+  status overall, if no `where` is specified) matches the comparison condition.
+
+When using the `where` key, the comparisons are done against the "after" version of the row—the
+values the columns were changed to. There also exist several special keys:
+
+`$changed_columns`
+: Contains an array of the columns whose values changed.
+
+`$before`
+: Contains an object representing the values of the row in the "before" state.
+
+`$after`
+: Contains an object representing the values of the row in the "after" state.
+
+`$key`
+: Contains an object representing the values of the key columns only.
+
+For instance, the following checks if the `status` column in any row changed:
+
+```json
+{
+  "rows": {
+    "changed": { "has_one": ["status"] }
+  }
+}
+```
+
+And this checks to see if any `role` column had its value changed to either "admin" or "root":
+
+```json
+{
+  "rows": {
+    "changed": {
+      "where": [{
+        "role": {
+          "$in": ["admin", "root"]
+        }
+      }]
+    }
+  }
+}
+```
+
+And this checks to see if any `role` column had its value changed from "manager" to "admin":
+
+```json
+{
+  "rows": {
+    "changed": {
+      "where": [{
+        "$before": {
+          "role": "manager"
+        },
+        "$after": {
+          "role": "admin"
+        }
+      }]
+    }
+  }
+}
+```
+
+By default, row criteria apply to all rows in a table. To check changes for a row that matches a
+specific primary key, use `by_key` to specify one or more key columns to match against.
+
+For instance, this checks if a row with an ID of 10 had its `role` column changed to either "admin"
+or "root":
+
+```json
+{
+  "rows": {
+    "by_key": { "id": 10 },
+    "changed": {
+      "where": [{
+        "role": {
+          "$in": ["admin", "root"]
+        }
+      }]
+    }
+  }
+}
+```
+
+#### Where Clause
+
+The `where` clause applies a test for every column in a row. The criteria can be a string value
+representing an exact match for that column or one of the following comparisons:
+
+- `$eq`: equal
+- `$not-eq`: not equal
+- `$in`: a member of a list
+- `$not-in`: not a member of a list
+- `$gt`: greater than
+- `$gte`: greater than or equal
+- `$lt`: less than
+- `$lte`: less than or equal
+- `$regex`: matching a regular expression
+
+Multiple criteria can be combined in a where clause by wrapping them in an `$and` or `$or` key, or
+can be negated using a `$not` key. By default, multiple criteria in the same object are combined
+using `$and`.
+
+For instance, the following matches if either a row had its `role` column changed to either "admin"
+or "root" OR it had its `permissions` column changed to "all" or "full":
+
+```json
+{
+  "rows": {
+    "changed": {
+      "where": {
+        "$or": [{
+          "role": {
+            "$in": ["admin", "root"]
+          }
+        }, {
+          "permissions": {
+            "$in": ["all", "full"]
+          }
+        }]
+      }
+    }
+  }
+}
+```
+
+Note that the where clause can specify columns that don't exist. So in the above example, if a
+table had no `permissions` column, it could still match the where clause if the `role` criteria
+matched. This enables writing generic where clauses that could apply to different database schemas.
+
+### Selector Composition
+
+As shown above, the selector can be an object that selects directly against the diff using `target`,
+`databases`, `tables` and/or `rows` to narrow the scope.
+
+For instance, the following matches any database diff where an `email` column was added to any
+table within the `users` database:
+
+```json
+{
+  "databases": {
+    "name": "users"
+  },
+  "tables": {
+    "columns": {
+      "added": {
+        "has_one": ["email"]
+      }
+    }
+  }
+}
+```
+
+However, selectors can also be composed together using `$and`, `$or` or `$not`.
+
+The following checks that one of the final databases has at least one table named `users` OR at
+least one table that had a column called `email` added:
+
+```json
+{
+  "$or": [
+    {
+      "tables": {
+        "name": {
+          "has_one": ["users"]
+        }
+      }
+    },
+    {
+      "tables": {
+        "columns": {
+          "added": {
+            "has_one": ["email"]
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+The selectors `$and` and `$or` take an array of object selectors while the selector `$not` takes a
+single object selector.
+
+### YAML Representations
+
+The selector format has been designed to make it easy to represent in YAML.
+
+For instance, the following selector matches any rows whose `password` or `password_hash` columns
+changed:
+
+```yaml
+selector:
+  rows:
+    changed:
+      has_one:
+        - password
+        - password_hash
+```
+
+
+## See Also
+
+- [Scorers](scorers.qmd): the `db_change` and `db_diff_change` scorers that apply selectors.
+- [Reference: inspect_toolkit.utils.databases](../reference/utils/databases.qmd): the full API.

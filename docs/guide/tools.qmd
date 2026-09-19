@@ -1,0 +1,92 @@
+---
+title: Tools
+---
+
+`tools` provides tool factories for building agent tools that need access to the `TaskState`, plus a
+ready-made tool that lets an agent score itself mid-trajectory.
+
+
+## DeferredAgentTool
+
+A tool factory whose construction is deferred until a `TaskState` exists.
+
+Use this when the tool you want to hand an agent depends on per-sample state that isn't available at
+the point where tools are normally declared. It's a thin wrapper around a single
+`build(state) -> Tool | None` callable; returning `None` opts the tool out for that sample.
+
+For example, [`run_scorer`](#run_scorer) needs the `TaskState`, so declare it as a deferred tool and
+mix it in alongside regular tools:
+
+```python
+from inspect_ai.tool import bash
+from inspect_toolkit.tools import DeferredAgentTool, ScorerInfo, run_scorer
+
+self_score = DeferredAgentTool(
+    build=lambda state: run_scorer(
+        scorers=[
+            ScorerInfo(
+                name="tests",
+                scorer=test_runner_scorer(),
+                description="Run the repository's test suite",
+            ),
+        ],
+        state=state,
+    )
+)
+
+tools = [bash(), self_score]   # a mix of regular and deferred tools
+```
+
+Then, once a `TaskState` is available (e.g. inside a solver), build the deferred tools and drop any
+that opt out:
+
+```python
+from inspect_ai.solver import TaskState
+from inspect_ai.tool import Tool
+
+def resolve_tools(tools: list, state: TaskState) -> list[Tool]:
+    resolved: list[Tool] = []
+    for tool in tools:
+        if isinstance(tool, DeferredAgentTool):
+            built = tool.build(state)
+            if built is not None:
+                resolved.append(built)
+        else:
+            resolved.append(tool)
+    return resolved
+```
+
+
+## run_scorer
+
+`run_scorer(scorers, state, default_max_calls=None)` builds a tool that lets an agent score itself
+mid-trajectory, with per-scorer call limits. Each scorer is described by a `ScorerInfo`:
+
+```python
+from inspect_toolkit.tools import ScorerInfo, run_scorer
+
+tool = run_scorer(
+    scorers=[
+        ScorerInfo(
+            name="tests",
+            scorer=test_runner_scorer(),
+            description="Run the repository's test suite",
+        ),
+    ],
+    state=state,
+)
+```
+
+`ScorerInfo` carries the `name` shown to the agent, the `scorer` to run, a `description`, and an
+optional `max_calls` limit for that scorer (falling back to `default_max_calls`).
+
+Because scoring during the trajectory can change the workspace, `run_scorer` sets the
+[`interim_score`](scorers.qmd#interim-scores) flag on the scorers it runs, so they recompute from
+current state rather than relying on cached results.
+
+
+## See Also
+
+- [Scorers](scorers.qmd): the scorers you expose through `run_scorer`, and the `interim_score`
+  flag it sets.
+- [Reference: inspect_toolkit.tools](../reference/tools.qmd): the full API.

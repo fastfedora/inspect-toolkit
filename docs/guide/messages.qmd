@@ -1,0 +1,37 @@
+---
+title: Message Helpers
+---
+
+`utils.evals` includes generic `inspect_ai` message transforms that are useful when building
+monitor prompts, e.g., to prevent a monitor from seeing chain-of-thought reasoning or the side-task
+instructions carried in specific tool calls.
+
+For example, to filter reasoning and the `submit` tool call use:
+
+```python
+from inspect_toolkit.utils.evals import (
+    filter_reasoning_from_messages,
+    filter_tool_calls_from_messages,
+)
+
+messages = filter_reasoning_from_messages(messages)                         # drop ContentReasoning
+messages = filter_tool_calls_from_messages(messages, exclude=["submit"])    # drop named tool calls
+```
+
+Helpers include:
+
+- `filter_reasoning_from_messages(messages)` \
+  Removes `ContentReasoning` blocks from the messages, so a monitor never sees the model's
+  chain-of-thought.
+
+- `filter_tool_calls_from_messages(messages, exclude=[...])` \
+  Removes calls to the named tools (and their results) from the messages, so a monitor never sees
+  the content of those calls.
+
+Both return a new list of messages, leaving the originals untouched.
+
+
+## See Also
+
+- [Dynamic Metrics](metrics.qmd#dynamic-metrics): other helpers in `utils.evals`.
+- [Reference: inspect_toolkit.utils.evals](../reference/utils/evals.qmd): the full API.

@@ -1,0 +1,39 @@
+---
+title: Coding Helpers
+---
+
+`utils.coding` provides repository setup and test running inside a sandbox based on the language of
+the repo. These are the async functions that the [`setup_repo` and `run_tests` solvers](solvers.qmd)
+wrap, exposed directly for use outside a solver.
+
+For example, to setup a python repo and run its tests:
+
+```python
+from inspect_toolkit.utils.coding import run_tests, setup_repo
+
+await setup_repo("python", repo_path)                 # install dependencies in the sandbox
+result = await run_tests("python", workspace_path)    # -> {"status": ..., "counts": {...}}
+```
+
+Helpers include:
+
+- `setup_repo(language, repo_path)` \
+  Prepares a repository in the sandbox: it installs dependencies and runs any setup and seed scripts
+  the repo provides.
+
+- `run_tests(language, workspace_path)` \
+  Runs the repository's test framework (e.g. `pytest`) across all tests and returns a result
+  dictionary. The result includes a `status` (`"success"` when all tests pass) and, for frameworks
+  that report them, per-outcome `counts` (e.g. `pass` and `total`) used by the [Test Runner
+  scorer](scorers.qmd#test-runner) to compute pass/fail percentages.
+
+Both functions take the repository language as their first argument and dispatch to the appropriate
+per-language implementation. The languages currently supported are Python, JavaScript, TypeScript,
+Java and Go.
+
+
+## See Also
+
+- [Solvers](solvers.qmd): the `setup_repo` and `run_tests` solvers that wrap these.
+- [Scorers](scorers.qmd): the Test Runner scorer that consumes `run_tests` output.
+- [Reference: inspect_toolkit.utils.coding](../reference/utils/coding.qmd): the full API.

@@ -1,0 +1,94 @@
+---
+title: Sandbox & Filesystem
+---
+
+Two related utility packages handle moving repositories around and inspecting the sandbox:
+`utils.sandbox` for operations inside the sandbox, and `utils.filesystem` for resolving where a
+repository lives and pulling it to the local filesystem.
+
+
+## Sandbox Helpers
+
+`utils.sandbox` provides within-sandbox operations (no host transfer involved) plus helpers for
+transferring between the host and the sandbox that were copied from Control Arena.
+
+Helpers include:
+
+- `copy_dir_in_sandbox(source_path, destination_path, ...)` \
+  Copies a directory from one location to another entirely within the sandbox, with optional
+  `include` glob patterns and an `owner`.
+
+- `file_exists_in_sandbox(path)` \
+  Returns whether a path exists in the sandbox.
+
+- `copy_dir_to_sandbox` / `copy_dir_from_sandbox` \
+  Transfer a directory between the host and the sandbox; copied from Control Arena (MIT license)
+  to avoid needing to add `control-arena` as a dependency.
+
+- `copy_dir` \
+  Copy a directory within the local filesystem but using the same mechanics as `copy_dir_to_sandbox`
+  and `copy_dir_from_sandbox` to ensure it behaves the same; copied from Control Arena (MIT license)
+  to avoid needing to add `control-arena` as a dependency.
+
+- `copy_location_to_sandbox(state, source_location, destination_path)` \
+   Resolves a [repo location](#repo-locations) and copies it into the sandbox.
+
+- `get_diff_from_ref_dir(...)` \
+  Produces a git diff of the sandbox workspace against a reference directory.
+
+
+## Filesystem Helpers
+
+`utils.filesystem` resolves repository locations and brings repositories to the
+local filesystem so they can be inspected or diffed:
+
+Helpers include:
+
+- `resolve_repo_location(state, location, source=...)` \
+   Resolves a [repo location](#repo-locations) to a concrete path.
+
+- `local_repo_dir(state, location)` \
+  An async context manager that yields a local directory for a repo location, materializing it from
+  the sandbox if necessary and cleaning up afterwards.
+
+- `parse_repo_location(location, default_source=...)` \
+  Splits a location string into its source and pointer.
+
+It also includes smaller path and file utilities: `to_path`, `normalize_path`, `ensure_extension`,
+`find_unused_filename`, `build_file_map` / `filter_file_map`, `copy_files`, and `load_data_file`.
+See the [`util.filesystem` API docs](../reference/utils/filesystem.qmd) for details on these.
+
+
+## Repo Locations
+
+A `RepoLocation` identifies where the files of a repo exist. It can be either a `Path` or a string
+in the form `<source>:<path>` where `source` is one of the following:
+
+- `local` \
+  A path in the local filesystem.
+
+- `sandbox` \
+  A path in the sandbox filesystem (e.g. `sandbox:/workspace`).
+
+- `metadata` \
+  A key in the sample metadata pointing to a local or sandbox path, or a mapping of local paths
+  (e.g. `metadata:reference_repo_dir`).
+
+- `snapshot` \
+  A snapshot index pointing to a snapshot entry in the store containing the path to
+  the repository (e.g. `snapshot:[first]`).
+
+A location without a prefix uses a default source supplied by the caller. Some helpers take
+parameters that accept a sequence of locations that are tried in order. For instance, the
+`diff_databases` solver takes a `before_source` parameter that can take a sequence of repo
+locations, so the diff can fall back from a snapshot to reference-repo metadata to the raw sample
+files.
+
+
+## See Also
+
+- [Solvers](solvers.qmd): the diff and snapshot solvers that resolve repo locations.
+- [Coding Helpers](coding.qmd): sandbox-side repo setup and test running.
+- [Reference: inspect_toolkit.utils.sandbox](../reference/utils/sandbox.qmd): the sandbox helpers.
+- [Reference: inspect_toolkit.utils.filesystem](../reference/utils/filesystem.qmd): the filesystem
+  helpers.

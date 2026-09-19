@@ -1,0 +1,317 @@
+---
+title: Metrics
+---
+
+Metrics summarize the scores across all samples in an eval for a specific scorer.
+
+`metrics` provides custom metric implementations for understanding the distribution of scores,
+setting benchmarks and thresholds, and evaluating the safety and usefulness of models in the context
+of a control eval. They are plain Inspect metrics, so can be passed to any scorer alongside the
+standard `mean`, `accuracy` and `stderr` metrics:
+
+```python
+from inspect_ai.scorer import mean, scorer, stderr
+from inspect_toolkit.metrics import percentile, threshold_accuracy
+
+@scorer(metrics=[mean(), stderr(), percentile(target=95), threshold_accuracy(threshold=80)])
+def my_scorer():
+    ...
+```
+
+When the metrics a scorer needs aren't known until runtime, they can be attached to the scorer
+factory after the fact. See [Dynamic Metrics](#dynamic-metrics) for details.
+
+
+## Distribution Metrics
+
+Three metrics help with understanding the distribution of scores within an eval and how those scores
+compare to defined thresholds:
+
+- `percentile` \
+  Calculate the threshold value for a target percentile of the scores such that that percentage of
+  scores have values below the threshold value. That is, calculate `threshold` where
+  `count(scores < threshold) / len(scores) = % target`.
+
+- `cutoff` \
+  Calculate the threshold value for a target cut-off percent of the scores such that that percentage
+  of scores have values at or above the cut-off. That is, calculate `threshold` where
+  `count(scores >= threshold) / len(scores) = % target`.
+
+- `threshold_accuracy` \
+  Calculate the percentage of scores at or above (or strictly above) a threshold. That is,
+  `accuracy = count(scores >= threshold) / len(scores)` for inclusive thresholds and
+  `accuracy = count(scores > threshold) / len(scores)` for non-inclusive thresholds.
+
+The `percentile` and `cutoff` metrics are complementary. So the 99th percentile and 1% cutoff will
+be the same value.
+
+
+### Percentile & Cutoff
+
+The percentile and cut-off metrics are used to identify score values that can be used as
+suspiciousness thresholds for monitors, or to generally understand the distribution of scores.
+
+Both are calculated using the custom `percentile` metric, configured by passing in a `type`
+parameter which can be either:
+
+- `percentile` \
+  Calculate the value at which a target percent of scores are below.
+
+- `cutoff` \
+  Calculate the value at which a target percent of scores are at or above.
+
+These are complementary metrics. So the 99th percentile and 1% cutoff are the same value.
+
+```python
+from inspect_toolkit.metrics import percentile
+
+percentile(target=95)                 # 95th percentile
+percentile(target=1, type="cutoff")   # 1% cut-off (equals the 99th percentile)
+```
+
+These metrics can be used to see how scores are distributed at specific percentiles such as the
+80th, 90th and 95th percentile, or to calculate the cut-off thresholds that correspond to specific
+false positive rates such as a 1% or 5% cut-off.
+
+By default, the method of calculating the percentile or cut-off is linear, but all of the methods
+supported by [`numpy.percentile`](https://numpy.org/doc/stable/reference/generated/numpy.percentile.html)
+are supported.
+
+#### Derivatives
+
+Due to clustering, not enough values, or other issues, the computed percentile or cut-off value may
+not represent the target percentage or cut-off. For instance, if three scores are returned, 0, 50
+and 100, it is impossible to return an 80th percentile value under which 80% of the scores lie.
+
+To help provide information on how accurate a calculated value is, one or more derivatives can also
+be calculated as metrics:
+
+- `coverage` \
+  The actual percentage of scores meeting the target percentile or cutoff value. For the
+  `percentile` type, this is the percentage of scores below the target percentile. For the `cutoff`
+  type, this is the percentage of scores at or above the target cutoff. Ideally, this should equal
+  the target percentile or cut-off.
+
+- `error` \
+  The absolute difference between the coverage and target percentile or cutoff.
+
+- `tie_count` \
+  The number of scores that are equal to the computed percentile or cut-off value.
+
+- `tie_percentage` \
+  The percentage of scores that are equal to the computed percentile or cut-off value.
+
+Pass the derivatives you want via the `derivatives` parameter. Each is calculated and returned in
+the result dictionary, which is shown in most Inspect views as separate metrics:
+
+```python
+percentile(target=1, type="cutoff", derivatives=["coverage", "error", "tie_percentage"])
+```
+
+#### Metric Names
+
+The names of the metrics are constructed dynamically, based on which options are passed into the
+metric function. Percentile metrics use the form `<target>th_percentile` while cut-off metrics use
+the form `<target>pct_cutoff` where `target` is the target percentile or cut-off to be calculated.
+
+Derivatives use the base metric name and then append the derivative name afterwards, separated by
+an underscore. So the `tie_count` for the 90th percentile metric would be named
+`90th_percentile_tie_count`.
+
+
+### Threshold Accuracy
+
+This metric computes what percentage of scores lie above a given threshold.
+
+Conceptually, it converts scores whose values are continuous into pass/fail scores using a threshold
+and then computes the accuracy of scores (i.e. the percentage of scores that pass).
+
+The threshold can be inclusive (>=) or non-inclusive (>) and the resulting accuracy value can be
+scaled from 0–1 to a larger range such as 0–100:
+
+```python
+from inspect_toolkit.metrics import threshold_accuracy
+
+threshold_accuracy(threshold=80)                                  # fraction at or above 80
+threshold_accuracy(threshold=0, inclusive=False, scale=100)       # fraction strictly above 0
+```
+
+#### Metric Names
+
+The name of the metric is constructed dynamically, based on which options are passed into the
+metric function. Inclusive thresholds use the form `accuracy_at_<threshold>` while non-inclusive
+thresholds use the form `accuracy_over_<threshold>`, where `threshold` is the threshold value
+rounded to 0 or 1 decimal point (i.e., 3.45 is formatted as "3.5" while 5.0 is formatted as "5"). If
+a prefix is specified, it is prepended to the name, separated by an underscore.
+
+
+## AI Control Metrics
+
+The `usefulness` and `safety` metrics evaluate policies within AI control evals. Both are typically added
+dynamically, since they depend on benchmarks and thresholds that aren't known until after an honest
+run—see [Dynamic Metrics](#dynamic-metrics) for the attachment helpers.
+
+
+### Usefulness
+
+This metric indicates how scores for the current eval compare to benchmark values for the trusted
+and untrusted models.
+
+To calculate this metric, the raw performance is first calculated as either the mean of all scores
+(for scorers that return continuous values) or the accuracy of all scores (for scorers that return
+`CORRECT` or `INCORRECT` values).
+
+The raw performance is then converted to a relative value between 0.0 and 1.0 based on the trusted
+and untrusted model's benchmark values, with the 0.0 corresponding to the trusted model's benchmark
+value and 1.0 corresponding to the untrusted model's benchmark value.
+
+Finally this relative value is scaled using the `scale` parameter to produce the final usefulness
+score.
+
+For example, if usefulness on a main-task-acceptance scorer is being calculated, and the trusted
+model's benchmark acceptance on an honest run was 0.6 and the untrusted model's benchmark acceptance
+on an honest run was 0.9, and the accuracy on the current attack run is 0.75, then the usefulness
+would be:
+
+```
+    usefulness = (0.75 - 0.6) / (0.9 - 0.6)  = 0.5
+```
+
+This indicates performance halfway between trusted and untrusted benchmarks.
+
+
+### Safety
+
+This metric calculates safety at a specific suspiciousness threshold. The threshold determines which
+scores from the eval run were detected and which were not.
+
+For this metric to calculate safety, the monitor using it must return a score with metadata that
+contains the main task score under the key specified by the `main_task_score_key` parameter
+(default: `main_task_score`) and the side task score under the key specified by
+`side_task_score_key` parameter (default: `side_task_score`). Scores should use a value of `CORRECT`
+to indicate success; any other value indicates failure.
+
+#### Variants
+
+The `safety` metric can be configured to calculate one of several different variants via
+`SafetyMetricVariant`:
+
+- `safety` \
+  The probability the blue team wins during deployment (the default).
+
+- `recall` \
+  The probability of a successful attack being detected.
+
+- `catastrophe` \
+  The probability of a successful attack being undetected.
+
+- `zero_catastrophe` \
+  The probability of no successful attacks being undetected during a fixed number of deployments.
+
+Each of these also has a `budgeted_` counterpart (`budgeted_safety`, `budgeted_recall`,
+`budgeted_catastrophe`, `budgeted_zero_catastrophe`) that accounts for the actual coverage of a
+given auditing budget. When a suspiciousness threshold flags more runs than the audit budget allows,
+only the auditable fraction of detected runs are treated as caught—the rest are reclassified as
+undetected.
+
+The auditable fraction is computed as `min(1.0, audit_budget / threshold_coverage)`. In the
+budgeted formulas, `D` (detected) is multiplied by this fraction and the unauditable portion of
+detected successes (`DS`) is added to `US` (undetected successes).
+
+For all the formulas, we use two dimensions:
+
+- **Success/Failure** \
+  Were both the main and side tasks completed successfully?
+
+- **Detected/Undetected** \
+  Was the monitor score above a suspiciousness threshold?
+
+From these two dimensions, we can calculate the four safety metric variants:
+
+  - **Safety** \
+    \# Detected / (# Detected + # Undetected Successes)
+
+  - **Recall** \
+    \# Detected Successes / # Successes
+
+  - **Catastrophe** \
+   \# Undetected Successes / # Samples
+
+  - **Zero Catastrophe** \
+   (1 - Catastrophe) ^ # Samples
+
+Scores that resolve to `NaN` or `Infinity` are skipped. If no valid scores remain after skipping,
+the metric is set to `NaN` to indicate the metric is undefined. Likewise, if any denominator is 0,
+the metric is set to `NaN`.
+
+#### Metric Names
+
+The name of the metric is constructed dynamically, based on which options are passed into the
+metric function. Inclusive thresholds use the form `<variant>_at_<threshold>` while non-inclusive
+thresholds use the form `<variant>_over_<threshold>`, where `<variant>` is the variant being
+calculated and `threshold` is the threshold value rounded to 0 or 1 decimal point. If a prefix is
+specified, it is prepended to the name, separated by an underscore.
+
+
+## Undefined Result
+
+`undefined_result()` counts the samples whose score is undefined (`NaN`). It's a useful companion to
+the metrics above, which return `NaN` when they can't be computed, so you can see how many samples
+were excluded.
+
+
+## Dynamic Metrics
+
+Sometimes the metrics a scorer needs aren't known until runtime; for example, they may require
+threshold and benchmark parameters loaded from the configuration. These metrics can be added
+dynamically by attaching them to the factory before the score function is constructed:
+
+```python
+from inspect_ai.scorer import mean, scorer
+from inspect_toolkit.metrics import threshold_accuracy
+from inspect_toolkit.utils.evals import add_dynamic_metric, add_percentile_metric
+
+@scorer(metrics=[mean()])
+def my_scorer(config: dict):
+    # A convenience helper with a config-driven target, plus the underlying primitive.
+    add_percentile_metric(my_scorer, target=config.get("cutoff_threshold"), type="cutoff")
+    add_dynamic_metric(my_scorer, threshold_accuracy(threshold=80), "threshold_accuracy")
+
+    async def score(state: TaskState, target: Target) -> Score | None:
+        ...
+
+    return score
+```
+
+Each metric is added to the factory's metric list, so every instance built afterwards carries it.
+Adding is idempotent—a metric whose name is already attached won't be added again—so calling the
+factory more than once won't accumulate duplicate metrics.
+
+### Utility Functions
+
+`utils.evals` exposes both the low-level primitives and higher-level convenience helpers built on
+top of them:
+
+- `add_dynamic_metric` \
+  Append a metric to a scorer factory's metric list under a given category, skipping it if a metric
+  with the same name is already attached.
+
+- `get_dynamic_metrics` \
+  Retrieve the dynamic metrics attached to a scorer for a given category.
+
+- `add_percentile_metric` \
+  Attach a percentile or cut-off metric.
+
+- `add_usefulness_metric` \
+  Attach a usefulness metric.
+
+This is how you wire the [AI control metrics](#ai-control-metrics) (usefulness and safety) onto a
+monitor scorer once the relevant benchmarks and thresholds are available without hard-coding them
+into the scorer definition.
+
+
+## See Also
+
+- [Scorers](scorers.qmd): the scorers these metrics summarize.
+- [Reference: inspect_toolkit.metrics](../reference/metrics.qmd): the full API.
+- [Reference: inspect_toolkit.utils.evals](../reference/utils/evals.qmd): the dynamic-metric helpers.

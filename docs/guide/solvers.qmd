@@ -1,0 +1,140 @@
+---
+title: Solvers
+---
+
+`solvers` provides [Inspect solvers](https://inspect.aisi.org.uk/solvers.html) that perform work
+during the trajectory by modifying files in the sandbox or saving information to the store that
+scorers or other solvers can use later.
+
+## Setup Solvers
+
+### Setup Repo
+
+Prepares the sandbox workspace by installing any repo dependencies and running any setup and seed
+scripts.
+
+The repo setup is based on the repository's language, which is taken from
+`state.metadata["repo_language"]` (default python). The result is stored in the store under the key
+specified by the `store_key` parameter (default: `setup.repo`).
+
+See [Coding Helpers](coding.qmd) for the languages supported and what "setup" means for each.
+
+### Snapshot Repo
+
+Captures the current repo state for later comparison by copying it into a separate folder within the
+sandbox (by default `/var/tmp/snapshots/<snapshot_name>`). A list of the snapshots taken is saved
+to the store under the key specified by the `store_key` parameter (default: `repo_snapshots`).
+
+Run this after setup but before any tests have run, so it can capture the seeded database state,
+which is later used by the [Diff Solution](#diff-solution) solver and the database scorers to
+identify the changes made in the database when running the submission.
+
+### Run Tests
+
+Executes the repository's tests and records the result.
+
+The test runner is based on the repository's language, which is taken from
+`state.metadata["repo_language"]` (default python). The result is stored in the store under the key
+specified by the `store_key` parameter (default: `run_tests`).
+
+As a setup solver, this can be used to record a baseline before the agent starts modifying the repo;
+after submission, the [Test Runner scorer](scorers.qmd#test-runner) runs the tests again and scores
+the results.
+
+### Import Eval
+
+Imports a previously-exported eval. It can import repo files into the sandbox workspace, chat
+messages (including tool calls), and store state. For example:
+
+```python
+from inspect_toolkit.solvers import import_eval
+
+import_solver = import_eval(
+    import_dir="exports/2025-09-12T00-50-59_my_setting_attack_password-change",
+    sandbox_files={
+        "input_folder": "repo",
+    },
+    chat=True,
+    store={
+        "include_keys": ["user_data", "config"],
+        "exclude_keys": ["temp_data"]
+    }
+)
+```
+
+Internally, `import_eval` delegates each aspect of the import to child solvers in the
+`solvers.imports` module, each of which takes plain parameters (via the `ChildSolverConfig`
+convention).
+
+
+## Post-Submission Solvers
+
+### Diff Solution
+
+Generates code and database diffs between the initial state of the repo and the state after the
+submitted solution.
+
+For the code diff, it uses the repo specified by either the `reference_repo_dir` or `repo_dir` key
+in the `state.metadata` of a sample as the reference codebase, and the files in the sandbox
+workspace as the solution codebase. The diff results are saved to the `submission_diff` key in the
+store.
+
+For the database diff, it first checks for a snapshot containing databases after any seed scripts
+have run; if none exists, it looks for databases in the directories specified by either the
+`reference_repo_dir` or `repo_dir` key in the `state.metadata` of a sample, and diffs whatever it
+finds against the databases in the workspace. The diff results are saved to the `db_diff` key in the
+store.
+
+Each diff can be toggled or configured via the `ChildSolverConfig` convention (`True` for defaults,
+`False`/`None` to skip, or a dict of parameters). For example:
+
+```python
+from inspect_toolkit.solvers import diff_solution
+
+diff_solver = diff_solution(
+    workspace_path="/workspace",
+    code_diff={
+        "exclude": ["*.log", "*.tmp"],
+    },
+    database_diff={
+        "db_patterns": ["*.db"],
+        "include_schema": True,
+        "include_data": False,
+    },
+)
+```
+
+Internally, `diff_solution` delegates each aspect of the diff to child solvers in the
+`solvers.diffs` module (`diff_code` and `diff_databases`).
+
+### Export Eval
+
+Exports key files and information about a sample and its trajectory so they can be analyzed by
+external tools or later re-imported via [Import Eval](#import-eval). You choose what to export by
+enabling each aspect via the `ChildSolverConfig` convention (`True` for defaults, `False`/`None` to
+skip, or a dict of parameters): the sandbox workspace, the original sample/reference repo files, the
+chat messages, and the store data. For example:
+
+```python
+from inspect_toolkit.solvers import export_eval
+
+export_solver = export_eval(
+    export_path="exports",
+    sandbox_files={"output_folder": "repo"},
+    sample_files={"output_folder": "reference-repo"},
+    chat=True,
+    store=True,
+)
+```
+
+Each exported sample is namespaced by its eval id, read from `state.metadata["eval_id"]`. If that
+key is unset, the export proceeds under `"eval"` and a warning is logged. Internally, `export_eval`
+delegates each aspect of the export to child solvers in the `solvers.exports` module.
+
+
+## See Also
+
+- [Coding Helpers](coding.qmd): the async functions `setup_repo` and `run_tests` wrap.
+- [Scorers](scorers.qmd): the scorers that consume solver output.
+- [Sandbox & Filesystem](sandbox.qmd): repo-location resolution used by the diff solvers.
+- [Reference: inspect_toolkit.solvers](../reference/solvers.qmd): the full API.

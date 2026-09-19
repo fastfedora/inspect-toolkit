@@ -1,0 +1,85 @@
+project:
+  type: website
+  pre-render:
+    - reference/filter/sidebar.py
+  post-render:
+    - scripts/post-render.sh
+
+metadata-files:
+  - reference/_sidebar.yml
+
+filters:
+  - at: pre-quarto
+    path: reference/filter/interlink.lua
+  # Expand ```api fenced blocks (panflute JSON filter).
+  - at: post-ast
+    type: json
+    path: reference/filter/filter.py
+
+website:
+  title: "Inspect Toolkit"
+  description: "Reusable metrics, scorers, solvers, tools, dataset sources, and sandbox helpers for Inspect AI evaluations"
+  bread-crumbs: true
+  page-navigation: true
+  search: true
+  repo-url: https://github.com/fastfedora/inspect-toolkit
+  repo-actions: [issue]
+
+  navbar:
+    left:
+      - text: User Guide
+        file: index.qmd
+      - text: Reference
+        file: reference/index.qmd
+    right:
+      - icon: github
+        href: https://github.com/fastfedora/inspect-toolkit
+
+  sidebar:
+     - title: Guide
+       style: docked
+       contents:
+        - section: "Getting Started"
+          contents:
+            - text: Welcome
+              file: index.qmd
+        - section: "Components"
+          contents:
+            - text: Metrics
+              file: guide/metrics.qmd
+            - text: Scorers
+              file: guide/scorers.qmd
+            - text: Solvers
+              file: guide/solvers.qmd
+            - text: Tools
+              file: guide/tools.qmd
+            - text: Dataset Sources
+              file: guide/datasets.qmd
+            - text: Fixtures
+              file: guide/fixtures.qmd
+        - section: "Utilities"
+          contents:
+            - text: Database Diffing
+              file: guide/databases.qmd
+            - text: Sandbox & Filesystem
+              file: guide/sandbox.qmd
+            - text: Coding Helpers
+              file: guide/coding.qmd
+            - text: Message Helpers
+              file: guide/messages.qmd
+
+format:
+  html:
+    theme: [theme-font.scss, cosmo, theme.scss]
+    toc: true
+    smooth-scroll: true
+    code-copy: true
+    link-external-newwindow: true
+
+# Make reference pages a sidebar collection
+collections:
+  reference:
+    categories: false
+
+execute:
+  freeze: auto

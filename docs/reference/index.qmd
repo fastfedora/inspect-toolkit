@@ -1,0 +1,27 @@
+---
+title: Reference
+---
+
+## Python API
+
+| Module | Description |
+| ------ | ----------- |
+| [metrics](metrics.qmd) | Distribution, threshold, safety and usefulness metrics |
+| [scorers](scorers.qmd) | Composite, test-runner, file-contents, sandbox-state and database-diff scorers |
+| [solvers](solvers.qmd) | Repo setup, test running, snapshots, diffs and eval export/import |
+| [solvers.exports](solvers/exports.qmd) | Child solvers that export chat, sample files, sandbox files and the store |
+| [solvers.imports](solvers/imports.qmd) | Child solvers that import chat, sandbox files and the store |
+| [solvers.diffs](solvers/diffs.qmd) | Child solvers that diff code and databases |
+| [tools](tools.qmd) | Deferred agent tools and a self-scoring tool |
+| [datasets](datasets.qmd) | Pluggable local and GitHub dataset sources |
+| [fixtures](fixtures.qmd) | Docker sandbox specifications from templates |
+| [utils.coding](utils/coding.qmd) | Language-specific repository setup and test running |
+| [utils.collections](utils/collections.qmd) | Small helpers for mappings and sequences |
+| [utils.databases](utils/databases.qmd) | SQLite diffing and a selector language for asserting on diffs |
+| [utils.eval](utils/eval.qmd) | Safe evaluation of expressions |
+| [utils.evals](utils/evals.qmd) | Dynamic-metric attachment, message filters and scorer/solver result helpers |
+| [utils.filesystem](utils/filesystem.qmd) | Path, file-map, data-file and repo-location helpers |
+| [utils.format](utils/format.qmd) | Formatting helpers (YAML) |
+| [utils.math](utils/math.qmd) | Numeric helpers (clamping, rescaling and float comparison) |
+| [utils.parse](utils/parse.qmd) | Value resolution and brace-style templating |
+| [utils.sandbox](utils/sandbox.qmd) | Within-sandbox copy, file checks and reference diffs |
