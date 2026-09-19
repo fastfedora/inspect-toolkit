@@ -346,3 +346,53 @@ class TestCleanup:
 
         assert not sandbox_path.exists()
         assert manager._cache == {}
+
+
+def make_extra_feature(root: Path, name: str, env_contents: str | None = None) -> Path:
+    """Create a standalone feature folder under `root/<name>/` for use as an extra_feature_dir."""
+    feature_dir = root / name
+    feature_dir.mkdir(parents=True)
+    (feature_dir / "install.sh").write_text("#!/usr/bin/env bash\n")
+    if env_contents is not None:
+        (feature_dir / "env").write_text(env_contents)
+    return feature_dir
+
+
+class TestExtraFeatureDirs:
+    def test_requested_feature_is_overlaid_from_extra_dir(self, sandbox_root, make_manager, tmp_path):
+        make_sandbox_template(sandbox_root, "base", features={"python": None})
+        extra = tmp_path / "extra_features"
+        make_extra_feature(extra, "web-proxy")
+        manager = make_manager(configs={}, extra_feature_dirs=[extra])
+
+        spec = manager.get_sandbox_spec(
+            name="base", tempdir_prefix="sb_", features=["python", "web-proxy"]
+        )
+
+        features_dir = Path(spec.config).parent / "features"
+        assert (features_dir / "web-proxy" / "install.sh").is_file()
+        assert (features_dir / "python").is_dir()
+
+    def test_extra_feature_overrides_template_feature(
+        self, sandbox_root, make_manager, tmp_path
+    ):
+        make_sandbox_template(sandbox_root, "base", features={"python": "FROM_TEMPLATE=1"})
+        extra = tmp_path / "extra_features"
+        make_extra_feature(extra, "python", env_contents="FROM_EXTRA=1")
+        manager = make_manager(configs={}, extra_feature_dirs=[extra])
+
+        spec = manager.get_sandbox_spec(name="base", tempdir_prefix="sb_", features=["python"])
+
+        env = (Path(spec.config).parent / "features" / "python" / "env").read_text()
+        assert env == "FROM_EXTRA=1"
+
+    def test_feature_missing_from_template_and_extras_still_raises(
+        self, sandbox_root, make_manager, tmp_path
+    ):
+        make_sandbox_template(sandbox_root, "base", features={"python": None})
+        extra = tmp_path / "extra_features"
+        extra.mkdir()
+        manager = make_manager(configs={}, extra_feature_dirs=[extra])
+
+        with pytest.raises(ValueError, match="Feature directory not found"):
+            manager.get_sandbox_spec(name="base", tempdir_prefix="sb_", features=["nope"])

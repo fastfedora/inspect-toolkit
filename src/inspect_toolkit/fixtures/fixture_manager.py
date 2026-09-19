@@ -24,6 +24,7 @@ class FixtureManager:
         image_name_prefix: str = "",
         variables: Mapping[str, Any] | None = None,
         extra_features: Sequence[str] | None = None,
+        extra_feature_dirs: Sequence[Path] | None = None,
     ):
         """
         Initialize the FixtureManager.
@@ -35,12 +36,17 @@ class FixtureManager:
             image_name_prefix: Prefix for generated Docker image names
             variables: Dictionary of variable names to values for template resolution
             extra_features: Extra features to add into the sandboxes of all fixtures
+            extra_feature_dirs: Additional directories of feature folders. When a requested feature
+                is not provided by the sandbox template, it is looked up in these directories (in
+                order) and copied in. This lets a shared base template be extended with
+                project-specific features without forking it.
         """
         self._configs = configs
         self._templates_dir = templates_dir
         self._image_name_prefix = image_name_prefix
         self._variables = variables or {}
         self._extra_features = extra_features or []
+        self._extra_feature_dirs = list(extra_feature_dirs or [])
         self._cache: dict[str, dict[str, Any]] = {}
 
     def use_fixture(self, name: str) -> dict[str, Any]:
@@ -107,6 +113,7 @@ class FixtureManager:
         """
         sandbox_path = self._copy_sandbox_template(name, tempdir_prefix)
 
+        self._overlay_extra_features(sandbox_path, features)
         self._ensure_features_exist(sandbox_path, features)
         self._update_compose_file(sandbox_path, name, features, environment)
 
@@ -158,6 +165,36 @@ class FixtureManager:
         shutil.copytree(source_dir, temp_dir, dirs_exist_ok=True)
 
         return temp_dir
+
+    def _overlay_extra_features(self, sandbox_path: str, features: Sequence[str]) -> None:
+        """
+        Overlay requested features from `extra_feature_dirs` onto the copied template.
+
+        This lets a shared base sandbox template ship a set of common features while consumers add
+        their own—or override a built-in feature—without forking the template. For each requested
+        feature, the extra directories are searched in order and the first match is copied in,
+        replacing the template's version of that feature if it has one. Features not found in any
+        extra directory keep whatever the template provides.
+
+        Args:
+            sandbox_path: Path to the copied sandbox template directory
+            features: The feature names requested for this sandbox
+        """
+        if not self._extra_feature_dirs:
+            return
+
+        features_dir = Path(sandbox_path) / "features"
+        features_dir.mkdir(exist_ok=True)
+
+        for feature in features:
+            for source_dir in self._extra_feature_dirs:
+                candidate = Path(source_dir) / feature
+                if candidate.is_dir():
+                    destination = features_dir / feature
+                    if destination.exists():
+                        shutil.rmtree(destination)
+                    shutil.copytree(candidate, destination)
+                    break
 
     def _ensure_features_exist(self, sandbox_path: str, features: Sequence[str]) -> None:
         """
