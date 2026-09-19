@@ -1,0 +1,41 @@
+name: Publish
+
+# Publishes the package to PyPI when a GitHub Release is published. The release tag is what
+# hatch-vcs uses to derive the version, so tag/release with the version you want to ship (e.g.
+# `v0.1.0`).
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-latest
+    # Optional but recommended: gate publishing behind a protected `pypi` environment.
+    environment: pypi
+    permissions:
+      # Required for PyPI Trusted Publishing (OIDC); no API token secret needed once the trusted
+      # publisher is configured on PyPI for this repo + workflow.
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history + tags so hatch-vcs can derive the version
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Check package metadata
+        run: uvx twine check dist/*
+
+      - name: Publish to PyPI
+        # Uses Trusted Publishing via the OIDC token above. To publish with an API token instead,
+        # drop `--trusted-publishing always` and set `UV_PUBLISH_TOKEN` from a secret.
+        run: uv publish --trusted-publishing always
