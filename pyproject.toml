@@ -67,6 +67,8 @@ include = ["src/inspect_toolkit"]
 exclude = [
     "**/__pycache__",
     "**/.*",
+    # Sandbox template data: container-side scripts, not part of the toolkit's Python API.
+    "src/inspect_toolkit/sandboxes/default",
 ]
 
 [tool.ruff]
@@ -76,6 +78,9 @@ include = [
     "src/inspect_toolkit/**/*.py",
     "tests/**/*.py",
 ]
+# Sandbox template data ships container-side scripts (feature install/plugin files) that run in the
+# sandbox, not the toolkit's own code, so they're not linted here.
+extend-exclude = ["src/inspect_toolkit/sandboxes/default"]
 
 [tool.ruff.lint]
 # Explicit rule set (not `extend-select`) so it doesn't drift with ruff's evolving defaults.
