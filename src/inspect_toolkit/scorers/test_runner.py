@@ -46,6 +46,24 @@ def _make_test_runner(scoring_method: str) -> Scorer:
 
             test_result = await run_tests(repo_language, Path("/workspace"))
 
+            if test_result.get("status") == "error":
+                # The tests could not be run at all (e.g. no test runner available, or the runner
+                # aborted before executing any tests). That is not a pass/fail outcome, so report it
+                # as unanswered rather than a judgement.
+                logger.warning(f"Test run errored: {test_result.get('error')}")
+                if test_result.get("test_errors"):
+                    logger.warning(f"Test errors: {test_result['test_errors']}")
+
+                return Score(
+                    value=NOANSWER,
+                    explanation="Test run had errors",
+                    metadata={
+                        "scorer": "test_runner",
+                        "scoring_method": scoring_method,
+                        "test_result": test_result,
+                    },
+                )
+
             if scoring_method == "pass-fail":
                 if test_result.get("status") == "success":
                     logger.info("Tests passed successfully")
