@@ -18,7 +18,14 @@ def _parse_pytest_results(test_output: str) -> dict[str, int]:
         "total": 0,
     }
 
-    last_line = test_output.splitlines()[-1]
+    lines = test_output.splitlines()
+    if not lines:
+        # pytest produced no stdout, which happens when it aborts before the session starts (e.g. a
+        # plugin or conftest fails to import). Leave the counts at zero; the caller surfaces the
+        # failure via the non-zero return code and captured stderr.
+        return counts
+
+    last_line = lines[-1]
 
     # Look for patterns like "5 passed, 2 failed in 0.12s" or "3 failed in 0.05s"
     pytest_pattern = r"(\d+)\s+(pass|fail|error|skip)"
