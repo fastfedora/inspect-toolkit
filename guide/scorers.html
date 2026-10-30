@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Scorers – Inspect Toolkit</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../guide/solvers.html" rel="next">
+<link href="../guide/metrics.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-91150935e2681dc4f8f6b99011c55971.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">Inspect Toolkit</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="../index.html" aria-current="page"> 
+<span class="menu-text">User Guide</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../reference/index.html"> 
+<span class="menu-text">Reference</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/fastfedora/inspect-toolkit"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../guide/metrics.html">Components</a></li><li class="breadcrumb-item"><a href="../guide/scorers.html">Scorers</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Getting Started</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Welcome</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Components</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../guide/metrics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Metrics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../guide/scorers.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Scorers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../guide/solvers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Solvers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../guide/tools.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tools</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../guide/datasets.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dataset Sources</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../guide/fixtures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Fixtures</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Utilities</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../guide/databases.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Database Diffing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../guide/sandbox.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sandbox &amp; Filesystem</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../guide/coding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Coding Helpers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../guide/messages.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Message Helpers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#score-types" id="toc-score-types" class="nav-link active" data-scroll-target="#score-types">Score Types</a></li>
+  <li><a href="#test-runner" id="toc-test-runner" class="nav-link" data-scroll-target="#test-runner">Test Runner</a></li>
+  <li><a href="#file-contents-scorer" id="toc-file-contents-scorer" class="nav-link" data-scroll-target="#file-contents-scorer">File Contents Scorer</a></li>
+  <li><a href="#sandbox-state-scorer" id="toc-sandbox-state-scorer" class="nav-link" data-scroll-target="#sandbox-state-scorer">Sandbox State Scorer</a></li>
+  <li><a href="#database-change-scorer" id="toc-database-change-scorer" class="nav-link" data-scroll-target="#database-change-scorer">Database Change Scorer</a></li>
+  <li><a href="#database-diff-change-scorer" id="toc-database-diff-change-scorer" class="nav-link" data-scroll-target="#database-diff-change-scorer">Database Diff Change Scorer</a></li>
+  <li><a href="#composite-scorer" id="toc-composite-scorer" class="nav-link" data-scroll-target="#composite-scorer">Composite Scorer</a></li>
+  <li><a href="#diving-deeper" id="toc-diving-deeper" class="nav-link" data-scroll-target="#diving-deeper">Diving Deeper</a>
+  <ul class="collapse">
+  <li><a href="#score-metadata" id="toc-score-metadata" class="nav-link" data-scroll-target="#score-metadata">Score Metadata</a></li>
+  <li><a href="#interim-scores" id="toc-interim-scores" class="nav-link" data-scroll-target="#interim-scores">Interim Scores</a></li>
+  </ul></li>
+  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See Also</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/fastfedora/inspect-toolkit/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../guide/metrics.html">Components</a></li><li class="breadcrumb-item"><a href="../guide/scorers.html">Scorers</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Scorers</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><code>scorers</code> provides a set of general-purpose <a href="https://inspect.aisi.org.uk/scorers.html">Inspect scorers</a> that aren’t tied to any particular task: run a repository’s tests, search files in the sandbox, check sandbox state via a command, assert on database changes, or combine other scorers with a formula.</p>
+<section id="score-types" class="level2">
+<h2 class="anchored" data-anchor-id="score-types">Score Types</h2>
+<p>Binary scorers return one of three values:</p>
+<ul>
+<li><p><strong><code>CORRECT</code></strong><br>
+When the scorer assesses that the submission and/or trajectory meets the criteria of the scorer.</p></li>
+<li><p><strong><code>INCORRECT</code></strong><br>
+When the scorer assesses that the submission and/or trajectory does not meet the criteria of the scorer.</p></li>
+<li><p><strong><code>NOANSWER</code></strong><br>
+When required data is missing (in the store, workspace or trajectory) or an error occurs evaluating the criteria for a scorer.</p></li>
+</ul>
+<p>Continuous scorers return floating-point scores in the range from 0.0–100.0 or -100.0–100.0 (rather than 0.0–1.0 or -1.0–1.0). The reason for this is two-fold:</p>
+<ul>
+<li><p><strong>Improved Readability</strong><br>
+When almost all of the values have a leading zero, the zero and the decimal point become extra noise. Using 0–100 makes the first digit meaningful.</p></li>
+<li><p><strong>Increased Precision</strong><br>
+<em>Inspect Viewer</em> rounds all values to 3 decimal places. Scores and metrics that use 0–100 can show more decimal places.</p></li>
+</ul>
+</section>
+<section id="test-runner" class="level2">
+<h2 class="anchored" data-anchor-id="test-runner">Test Runner</h2>
+<p>A scorer that can be configured to be either continuous or pass-fail that indicates what percentage of tests passed or failed.</p>
+<p>The test runner runs the test framework (e.g., <code>pytest</code>) across all tests in the sandbox workspace, using the standard test framework for the language specified by <code>state.metadata["repo_language"]</code> (default <code>"python"</code>). Tests may include unit, integration and end-to-end tests. It then scores the results based on one of these scoring methods:</p>
+<ul>
+<li><p><code>pass-fail</code><br>
+Returns <code>CORRECT</code> if all tests pass; <code>INCORRECT</code> otherwise.</p></li>
+<li><p><code>percent-pass</code><br>
+Returns the percentage of tests that passed on a scale from 0–100.</p></li>
+<li><p><code>percent-fail</code><br>
+Returns the percentage of tests that failed on a scale from 0–100.</p></li>
+</ul>
+<p>To construct the scorer, pass the scoring method as the only parameter:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>tests <span class="op">=</span> test_runner_scorer(<span class="st">"percent-pass"</span>)   <span class="co"># or "pass-fail" / "percent-fail"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The test runner is also exposed as three individually-registered scorers: <code>all_tests_pass_scorer</code>, <code>percent_passing_tests_scorer</code> and <code>percent_failing_tests_scorer</code>.</p>
+<p>The scoring method determines the score name in the eval logs:</p>
+<ul>
+<li><code>pass-fail</code> / <code>all_tests_pass_scorer</code> =&gt; <code>all_tests_pass</code></li>
+<li><code>percent-pass</code> / <code>percent_passing_tests_scorer</code> =&gt; <code>percent_passing_tests</code></li>
+<li><code>percent-fail</code> / <code>percent_failing_tests_scorer</code> =&gt; <code>percent_failing_tests</code></li>
+</ul>
+<p>If an error occurs while running the tests, <code>NOANSWER</code> is returned regardless of the scoring method.</p>
+<section id="metrics" class="level4">
+<h4 class="anchored" data-anchor-id="metrics">Metrics</h4>
+<p>Each scorer provides the <code>mean</code> and <code>stderr</code> metrics by default. <code>percent_passing_tests</code> adds a <code>threshold_accuracy</code> metric at an inclusive threshold of 100 (i.e., &gt;=100) to indicate the percentage of samples with all tests passing; <code>percent_failing_tests</code> adds a <code>threshold_accuracy</code> metric at a non-inclusive threshold of 0 (i.e., &gt;0) to indicate the percentage of samples with any failing tests.</p>
+</section>
+</section>
+<section id="file-contents-scorer" class="level2">
+<h2 class="anchored" data-anchor-id="file-contents-scorer">File Contents Scorer</h2>
+<p>A pass-fail scorer that searches for strings in sandbox files.</p>
+<p>For example, this scorer can check the log file of a web proxy server to see if an exploit exfiltrated data to an external server, or check a secret directory to see if an exploit logged a secret outside of the normal workspace.</p>
+<p>This scorer searches files within a given path in the sandbox for a given string. Options include case-sensitive matching, recursive searching or only searching files with specific file extensions.</p>
+<p>To construct the scorer, pass one or more search parameters:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>contains <span class="op">=</span> file_contents_scorer(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    folder_path<span class="op">=</span><span class="st">"/workspace/src"</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    search_string<span class="op">=</span><span class="st">"TODO"</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    file_extensions<span class="op">=</span>[<span class="st">".py"</span>],</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>If a file containing the given string is found, <code>CORRECT</code> is returned. If the path could not be found in the sandbox, if no files matching the filter criteria could be found, or if none of the files found contain the string, then <code>INCORRECT</code> is returned. If an error occurs, <code>NOANSWER</code> is returned.</p>
+<p>To aid in debugging, the following keys are set on the store:</p>
+<ul>
+<li><code>file_scorer_contents['{folder_path}'].stdout</code>: Contains the <code>stdout</code> of the find result for the folder path.</li>
+<li><code>file_scorer_contents['{folder_path}'].stderr</code>: Contains the <code>stderr</code> of the find result for the folder path.</li>
+<li><code>file_scorer.files['{file_path}'].content</code>: Contains the content of each file searched.</li>
+<li><code>file_scorer.files['{file_path}'].found</code>: Indicates whether the search string was found for each file searched.</li>
+</ul>
+<p>These keys are not set when <code>interim_score</code> is set to true, as this indicates this scorer is being called during a trajectory.</p>
+</section>
+<section id="sandbox-state-scorer" class="level2">
+<h2 class="anchored" data-anchor-id="sandbox-state-scorer">Sandbox State Scorer</h2>
+<p>A pass-fail scorer that runs a command in the sandbox to check its state.</p>
+<p>For example, this scorer can check if a process is still running or has been killed by an exploit.</p>
+<p>If the command executed in the sandbox has a return code of 0, then <code>CORRECT</code> is returned; otherwise <code>INCORRECT</code> is returned.</p>
+<p>To construct the scorer, pass the command to run, the current working directory to set, if any, and an optional timeout:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>exists <span class="op">=</span> sandbox_state_scorer(command<span class="op">=</span><span class="st">"test -f /workspace/app/config.yaml"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Tip: Use the <code>exit</code> bash command to control the exit code. For example, to have this scorer return <code>CORRECT</code> when the <code>firewall</code> process has been killed, use:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ps</span> <span class="at">-A</span> <span class="kw">|</span> <span class="fu">grep</span> firewall <span class="op">&gt;</span>/dev/null <span class="kw">&amp;&amp;</span> <span class="bu">exit</span> 1 <span class="kw">||</span> <span class="bu">exit</span> 0</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="database-change-scorer" class="level2">
+<h2 class="anchored" data-anchor-id="database-change-scorer">Database Change Scorer</h2>
+<p>A pass-fail scorer that checks for the presence of specific changes in one or more databases.</p>
+<p>For example, whether the value of a password column changed during the trajectory or when running the tests afterwards.</p>
+<p>The database comparison is between the state of the databases before and after the workspace was changed. It takes a selector that can select changes based on databases, tables, row changes and field value changes.</p>
+<p>To construct the scorer, pass in the selector:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> inspect_toolkit.scorers <span class="im">import</span> db_change_scorer</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>scorer <span class="op">=</span> db_change_scorer({<span class="st">"rows"</span>: {<span class="st">"changed"</span>: {<span class="st">"where"</span>: [{<span class="st">"password"</span>: {<span class="st">"$eq"</span>: <span class="st">"newpass"</span>}}]}}})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>To aid debugging, the diff results are saved to the <code>db_diff</code> key in the store, unless <code>interim_score</code> is set to true to indicate this scorer is being called during a trajectory. If <code>db_diff</code> already exists in the score, the diff cached for that key will be reused instead of running the diff again.</p>
+<p>For the full selector language, see <a href="../guide/databases.html">Database Diffing</a>, or the <code>matches_diff</code> function under <a href="../reference/utils/databases.html"><code>utils.databases</code></a>.</p>
+</section>
+<section id="database-diff-change-scorer" class="level2">
+<h2 class="anchored" data-anchor-id="database-diff-change-scorer">Database Diff Change Scorer</h2>
+<p>A pass-fail scorer that checks whether the changes in one or more databases when running the tests on the reference and solution repos differ in specific ways.</p>
+<p>For example, whether a password column changed <em>differently</em> when running tests in the reference repo vs the solution repo. This prevents incorrectly detecting a normal password change operation by tests as a successful side task.</p>
+<p>To detect how databases change differently, this scorer creates two database diffs and then diffs those diffs. The first diff (the “reference diff”) compares the databases before the agent is given access with their state after the tests have been run in the reference repo (including any new tests copied over from the solution matching the <code>test_patterns</code> parameter). The second diff (the “solution diff”) compares that same initial state with the databases after the tests have been run in the solution repo.</p>
+<p>These two diffs are then compared to create a “diff of diffs” that represents what changes occurred only in the reference diff (<code>before_only</code>), what changes occurred only in the solution diff (<code>after_only</code>) and what changes occurred in both (<code>shared</code>). Finally, a selector—using the same format as the Database Change Scorer—is applied to the <code>after_only</code> changes. If they match, <code>CORRECT</code> is returned; otherwise <code>INCORRECT</code>.</p>
+<p>For more details on the selector and the diff format, see <a href="../guide/databases.html">Database Diffing</a>.</p>
+</section>
+<section id="composite-scorer" class="level2">
+<h2 class="anchored" data-anchor-id="composite-scorer">Composite Scorer</h2>
+<p>A continuous scorer that combines the scores of other scorers using a formula.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>composite <span class="op">=</span> composite_scorer(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    scorers<span class="op">=</span>[git_diff_monitor(), full_trajectory_monitor()],</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    formula<span class="op">=</span><span class="st">"git_diff_monitor.value + full_trajectory_monitor.value"</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The formula can be either:</p>
+<ul>
+<li>A function that takes a dictionary mapping scorer names to Scores and returns a Value</li>
+<li>A string expression that references scorer values as variables</li>
+</ul>
+<p>Example string formulas include:</p>
+<ul>
+<li><code>(git_diff_monitor.value + full_trajectory_monitor.value) / 2</code></li>
+<li><code>max(git_diff_monitor.value, full_trajectory_monitor.value)</code></li>
+</ul>
+<p>While an example function formula is:</p>
+<ul>
+<li><code>lambda scores: scores["git_diff_monitor"].value + scores["full_trajectory_monitor"].value</code></li>
+</ul>
+<p>Available built-in functions for string formulas are those defined by default in the <a href="../reference/utils/eval.html"><code>safe_eval</code></a> utility.</p>
+</section>
+<section id="diving-deeper" class="level2">
+<h2 class="anchored" data-anchor-id="diving-deeper">Diving Deeper</h2>
+<section id="score-metadata" class="level3">
+<h3 class="anchored" data-anchor-id="score-metadata">Score Metadata</h3>
+<p>Scores produced by these scorers may include metadata useful for understanding why the scorer arrived at that score or debugging incorrect scores. Score metadata always includes the name of the scorer under the <code>scorer</code> key.</p>
+<p>If an error occurred generating the score, the text of the error will be under the <code>error</code> key (if no <code>error</code> key exists, no error occurred). Other metadata may include the settings passed into the scorer, intermediate calculations, and additional debug information.</p>
+<p>All of this is visible in the Inspect Viewer by switching to the Metadata tab when viewing a score.</p>
+</section>
+<section id="interim-scores" class="level3">
+<h3 class="anchored" data-anchor-id="interim-scores">Interim Scores</h3>
+<p>Many scorers reuse the results of solvers (or other scorers) that ran before them to avoid paying the cost of running them multiple times. When scorers are run at the end of a run, using cached results is generally fine, as no additional changes are being made to the workspace or trajectory. However, if an agent is provided the <a href="../guide/tools.html"><code>run_scorer</code></a> tool to produce interim scores during the trajectory, stale caches can cause a scorer to return an incorrect score for the current state of the sample.</p>
+<p>For this reason, some scorers (e.g.&nbsp;the database scorers) have an <code>interim_score</code> parameter, which disables relying on cached results and runs all dependent solvers regardless of whether a cached value exists. This parameter is automatically set by the <code>run_scorer</code> tool, so for most usage it is not necessary to set it manually.</p>
+</section>
+</section>
+<section id="see-also" class="level2">
+<h2 class="anchored" data-anchor-id="see-also">See Also</h2>
+<ul>
+<li><a href="../guide/metrics.html">Metrics</a>: the metrics these scorers summarize.</li>
+<li><a href="../guide/databases.html">Database Diffing</a>: the selector language used by the database scorers.</li>
+<li><a href="../guide/tools.html">Tools</a>: the <code>run_scorer</code> tool for interim scoring.</li>
+<li><a href="../reference/scorers.html">Reference: inspect_toolkit.scorers</a>: the full API.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../guide/metrics.html" class="pagination-link" aria-label="Metrics">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Metrics</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../guide/solvers.html" class="pagination-link" aria-label="Solvers">
+        <span class="nav-page-text">Solvers</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fastfedora/inspect-toolkit/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer><script src="../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

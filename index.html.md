@@ -1,0 +1,69 @@
+# Inspect Toolkit
+
+
+## Welcome
+
+`inspect-toolkit` is a collection of reusable building blocks for
+[Inspect AI](https://inspect.aisi.org.uk/) evaluations: metrics,
+scorers, solvers, tools, dataset sources, and sandbox helpers that are
+useful to anyone using Inspect, independent of any particular config
+system or agent framework.
+
+It was extracted from the
+[refactor-arena](https://github.com/fastfedora/refactor-arena)
+evaluation setting so its generic pieces can be shared. It depends only
+on `inspect-ai`, `numpy`, and `pyyaml`, plus `gitpython` (used only by
+the sandbox git-diff helpers vendored from Control Arena).
+
+## Install
+
+``` bash
+uv add inspect-toolkit        # or: pip install inspect-toolkit
+```
+
+Requires Python 3.12+.
+
+## Quick Start
+
+Everything here is a plain Inspect component. Pass the metrics to any
+`@scorer`, drop the scorers and solvers into a `Task`, and hand the
+tools to an agent:
+
+``` python
+from inspect_ai.scorer import mean, scorer, stderr
+from inspect_toolkit.metrics import percentile, threshold_accuracy
+from inspect_toolkit.scorers import test_runner_scorer
+
+@scorer(metrics=[mean(), stderr(), percentile(target=95), threshold_accuracy(threshold=80)])
+def my_scorer():
+    ...
+
+tests = test_runner_scorer("percent-pass")   # run the repo's test suite in the sandbox
+```
+
+## Learning More
+
+Start with the components you need:
+
+- [Metrics](guide/metrics.qmd): Distribution, threshold, safety and
+  usefulness metrics, plus metrics attached dynamically at runtime.
+- [Scorers](guide/scorers.qmd): Composite scoring, test running,
+  file-contents search, and sandbox-state checks.
+- [Solvers](guide/solvers.qmd): Setup repos, run tests and snapshot
+  repos, plus diffs, exports and imports.
+- [Tools](guide/tools.qmd): Deferred agent tools and a tool that lets an
+  agent score itself mid-trajectory.
+- [Dataset Sources](guide/datasets.qmd): Pluggable dataset sources with
+  GitHub sparse-checkout caching.
+- [Fixtures](guide/fixtures.qmd): Build Docker sandbox specifications
+  from templates with feature flags and secret injection.
+- [Database Diffing](guide/databases.qmd): Pure-stdlib SQLite diffing
+  and a selector language for asserting on diffs.
+- [Sandbox & Filesystem](guide/sandbox.qmd): Within-sandbox operations
+  and repo-location resolution.
+- [Coding Helpers](guide/coding.qmd): Repository setup and test running
+  based on the repo language.
+- [Message Helpers](guide/messages.qmd): Generic `inspect_ai` message
+  transforms for monitor prompts.
+
+For the complete API, see the [Reference](reference/index.qmd).
